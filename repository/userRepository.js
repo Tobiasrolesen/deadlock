@@ -1,5 +1,72 @@
-import * as userModel from "../models/user.js";
+import axios from 'axios';
 
-export async function getUserById(id) {
-    return await userModel.fetchSteamUsers(id);
+export async function getUserById(user_id) {
+    try {
+        //Der søges direkte i api'et
+        const response = await axios.get(
+            `https://api.deadlock-api.com/v1/players/steam?account_ids=${encodeURIComponent(user_id)}`,
+            { timeout: 500 }
+        );
+        //Api'et retunere et array og steamId er på første 0 plads.
+        const data = response.data[0]
+
+        if (!data) return null ;
+        return {
+            account_id: user_id,
+            personaname: data.personaname,
+            avatar: data.avatar,
+        };
+    } catch (err) {
+        console.log(err);
+    }
 }
+
+export async function getHeroStatsByUserId(user_id) {
+    try {
+
+        const reponse = await axios.get(
+            `https://api.deadlock-api.com/v1/players/${encodeURIComponent(user_id)}/hero-stats`,
+            { timeout: 500 }
+        );
+
+        const data = reponse.data
+        if (!data || data.length === 0) return null;
+        return data.map(data => ({
+            account_id: data.account_id,
+            matches_played: data.matches_played,
+            wins: data.wins,
+            kills: data.kills,
+            deaths: data.deaths,
+            assists: data.assists,
+            time_played: data.time_played,
+            last_played: data.last_played,
+            damage_per_min: data.damage_per_min,
+            networth_per_min: data.networth_per_min,
+            accuracy: data.accuracy
+        }));
+
+    } catch (err) {
+        console.log(err);
+    }
+}
+
+export async function getUserByName(personaname){
+    try {
+        const response = await axios.get(
+            `https://api.deadlock-api.com/v1/players/steam-search?search_query=${encodeURIComponent(personaname)}`,
+            {timeout: 500}
+        )
+        const data = response.data[0]
+
+        if (!data) return null ;
+        return {
+            account_id: data.account_id,
+            personaname: data.personaname,
+            avatar: data.avatar,
+        };
+    } catch (err){
+        console.log(err);
+    }
+}
+
+//`https://api.deadlock-api.com/v1/players/${encodeURIComponent(user_id)}/hero-stats`

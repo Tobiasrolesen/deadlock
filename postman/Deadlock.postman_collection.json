@@ -1,0 +1,183 @@
+{
+  "info": {
+    "_postman_id": "21332a9f-dbb8-4a50-8fc7-0ffa200cd71a",
+    "name": "Deadlock",
+    "description": "Simple tests for the Deadlock API (User story 1: search for a player by Steam name and see stats).\n\nStart the server with `npm start` before running the collection. `baseUrl` points to `http://localhost:3000`.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "createdAt": "2026-11-23T11:19:15.000Z",
+    "updatedAt": "2026-11-23T11:19:16.000Z",
+    "lastUpdatedBy": "53420860",
+    "uid": "53420860-21332a9f-dbb8-4a50-8fc7-0ffa200cd71a"
+  },
+  "item": [
+    {
+      "name": "Search player by name",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status is 200\", () => {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"Correct player is returned\", () => {",
+              "    pm.expect(pm.response.json().personaname).to.eql(\"Matelund\");",
+              "});"
+            ]
+          }
+        }
+      ],
+      "id": "4bb2b348-4110-46f0-aabd-6108ea233452",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/user/search/Matelund",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "user",
+            "search",
+            "Matelund"
+          ]
+        },
+        "description": "Searches for a player by Steam profile name.\n\nExpected: **200** with `account_id`, `personaname` and `avatar`."
+      },
+      "response": [],
+      "createdAt": "2026-11-23T11:19:16.000Z",
+      "updatedAt": "2026-11-23T11:19:16.000Z",
+      "uid": "53420860-4bb2b348-4110-46f0-aabd-6108ea233452"
+    },
+    {
+      "name": "Search player that does not exist",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status is 404\", () => {",
+              "    pm.response.to.have.status(404);",
+              "});",
+              "",
+              "pm.test(\"Error message is returned\", () => {",
+              "    pm.expect(pm.response.json().message).to.eql(\"User Not Found\");",
+              "});"
+            ]
+          }
+        }
+      ],
+      "id": "d9d3d8e0-4ba8-4182-8329-feef2c0a1bbe",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/user/search/Nonexistingfalsename123943ksofk",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "user",
+            "search",
+            "Nonexistingfalsename123943ksofk"
+          ]
+        },
+        "description": "Searches for a name that does not exist.\n\nExpected: **404** with `{ \"message\": \"User Not Found\" }`."
+      },
+      "response": [],
+      "createdAt": "2026-11-23T11:19:16.000Z",
+      "updatedAt": "2026-11-23T11:19:16.000Z",
+      "uid": "53420860-d9d3d8e0-4ba8-4182-8329-feef2c0a1bbe"
+    },
+    {
+      "name": "Get player by ID",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status is 200\", () => {",
+              "    pm.response.to.have.status(200);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "id": "c7f30119-2b2f-4a82-8679-19fb11ae2168",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/user/76561198200356797",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "user",
+            "76561198200356797"
+          ]
+        },
+        "description": "Gets a player's Steam profile by Steam ID.\n\nExpected: **200** with the profile."
+      },
+      "response": [],
+      "createdAt": "2026-11-23T11:19:16.000Z",
+      "updatedAt": "2026-11-23T11:19:16.000Z",
+      "uid": "53420860-c7f30119-2b2f-4a82-8679-19fb11ae2168"
+    },
+    {
+      "name": "Get hero stats",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status is 200\", () => {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"Response is a list\", () => {",
+              "    pm.expect(pm.response.json()).to.be.an(\"array\");",
+              "});"
+            ]
+          }
+        }
+      ],
+      "id": "a9555f32-0e63-4447-8bc5-edc1ca61f323",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/user/240091069/hero-stats",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "user",
+            "240091069",
+            "hero-stats"
+          ]
+        },
+        "description": "Gets a player's stats per hero.\n\nExpected: **200** with a list, one row per hero."
+      },
+      "response": [],
+      "createdAt": "2026-11-23T11:19:16.000Z",
+      "updatedAt": "2026-11-23T11:19:16.000Z",
+      "uid": "53420860-a9555f32-0e63-4447-8bc5-edc1ca61f323"
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000"
+    }
+  ]
+}
