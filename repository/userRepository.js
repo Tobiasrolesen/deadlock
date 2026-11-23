@@ -5,7 +5,7 @@ export async function getUserById(user_id) {
         //Der søges direkte i api'et
         const response = await axios.get(
             `https://api.deadlock-api.com/v1/players/steam?account_ids=${encodeURIComponent(user_id)}`,
-            { timeout: 500 }
+            { timeout: 5000 }
         );
         //Api'et retunere et array og steamId er på første 0 plads.
         const data = response.data[0]
@@ -26,7 +26,7 @@ export async function getHeroStatsByUserId(user_id) {
 
         const reponse = await axios.get(
             `https://api.deadlock-api.com/v1/players/${encodeURIComponent(user_id)}/hero-stats`,
-            { timeout: 500 }
+            { timeout: 5000 }
         );
 
         const data = reponse.data
@@ -54,7 +54,7 @@ export async function getUserByName(personaname){
     try {
         const response = await axios.get(
             `https://api.deadlock-api.com/v1/players/steam-search?search_query=${encodeURIComponent(personaname)}`,
-            {timeout: 500}
+            {timeout: 5000}
         )
         const data = response.data[0]
 
