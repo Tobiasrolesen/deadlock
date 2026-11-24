@@ -11,3 +11,6 @@ export async function getUserByName(name){
 export async function getHeroStatsByUserId(id){
     return await userRepository.getHeroStatsByUserId(id)
 }
+export async function getMatchHistoryByUserId(id){
+    return await userRepository.getMatchHistoryByUserId(id);
+}

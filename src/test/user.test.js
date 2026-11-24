@@ -30,3 +30,24 @@ test('GET /api/user/id/hero-stats returns profiles hero stats', async t => {
     expect(Array.isArray(response.body)).toBe(true);
     expect(response.body[0].account_id).toBe(Number(id));
 });
+
+
+//matches test
+test('GET /api/user/id/matches returns matches associated with id', async t => {
+    const id = "240091069"
+    const response = await request(app).get(`/api/user/${id}/matches`);
+    expect(response.status).toBe(200);
+    expect(Array.isArray(response.body)).toBe(true);
+    expect(response.body[0].account_id).toBe(Number(id));
+});
+
+test('GET /api/user/id/matches returns 404 for no matches found', async t => {
+    const id = "76561199095680219"
+    const response = await request(app).get(`/api/user/${id}/matches`);
+    expect(response.status).toBe(404);
+    expect(response.body.message).toBe("No matches were found");
+});
+
+
+
+
