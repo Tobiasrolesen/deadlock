@@ -33,6 +33,7 @@ export async function getHeroStatsByUserId(user_id) {
         if (!data || data.length === 0) return null;
         return data.map(data => ({
             account_id: data.account_id,
+            hero_id: data.hero_id,
             matches_played: data.matches_played,
             wins: data.wins,
             kills: data.kills,
@@ -69,4 +70,36 @@ export async function getUserByName(personaname){
     }
 }
 
-//`https://api.deadlock-api.com/v1/players/${encodeURIComponent(user_id)}/hero-stats`
+export async function getMatchHistoryByUserId(user_id){
+    try {
+        const response = await axios.get(
+            `https://api.deadlock-api.com/v1/players/${encodeURIComponent(user_id)}/match-history`,
+            {timeout: 5000}
+        )
+        const data = response.data
+        if (!data || data.length === 0) return null;
+
+        return data.map(data => ({
+            account_id: data.account_id,
+            match_id: data.match_id,
+            hero_id: data.hero_id,
+            hero_level: data.hero_level,
+            game_mode: data.game_mode,
+            Match_mode: data.Match_mode,
+            Player_team: data.Player_team,
+            player_kills: data.player_kills,
+            player_deaths: data.deaths,
+            player_assists: data.player_assists,
+            denies: data.denies,
+            net_worth: data.net_worth,
+            last_hits: data.last_hits,
+            match_duration: data.match_duration,
+            match_result: data.match_result,
+            objectives_mask_team0:data.objectives_mask_team0,
+            objectives_mask_team1:data.objectives_mask_team1,
+            Player_match_outcome: data.Player_match_outcome,
+        }));
+    } catch (err) {
+        console.log(err);
+    }
+}
