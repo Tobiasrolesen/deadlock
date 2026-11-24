@@ -100,6 +100,8 @@ export async function getMatchHistoryByUserId(user_id){
             player_match_outcome: data.player_match_outcome,
         }));
     } catch (err) {
-        console.log(err);
+        const error = new Error("Match history service unavailable", { cause: err });
+        error.status = 503;
+        throw error;
     }
 }
