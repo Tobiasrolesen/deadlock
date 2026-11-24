@@ -33,6 +33,7 @@ export async function getHeroStatsByUserId(user_id) {
         if (!data || data.length === 0) return null;
         return data.map(data => ({
             account_id: data.account_id,
+            hero_id: data.hero_id,
             matches_played: data.matches_played,
             wins: data.wins,
             kills: data.kills,
@@ -47,6 +48,7 @@ export async function getHeroStatsByUserId(user_id) {
 
     } catch (err) {
         console.log(err);
+        throw err;
     }
 }
 
