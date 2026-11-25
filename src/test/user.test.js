@@ -1,7 +1,10 @@
 import { test, expect } from 'vitest';
 import request from 'supertest';
 import app from '../app.js';
+<<<<<<< HEAD
+=======
 import { sortMatches } from '../services/userService.js';
+>>>>>>> origin/main
 
 test('GET /api/user/id returns correct id', async t => {
     const id = "76561198200356797"
@@ -31,6 +34,8 @@ test('GET /api/user/id/hero-stats returns profiles hero stats', async t => {
     expect(Array.isArray(response.body)).toBe(true);
     expect(response.body[0].account_id).toBe(Number(id));
 });
+<<<<<<< HEAD
+=======
 
 
 // ----- Mest spillede helte -----
@@ -112,3 +117,4 @@ test('GET /api/user/id/matches returns 404 for no matches found', async t => {
 
 
 
+>>>>>>> origin/main
