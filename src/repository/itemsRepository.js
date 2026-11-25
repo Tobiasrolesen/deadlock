@@ -60,16 +60,13 @@ export async function getItemByHeroId(id) {
 
 export async function getItemBySlotType(slot_type) {
     try {
-        let data;
+        let data = [];
         try {
             const response = await axios.get(`https://api.deadlock-api.com/v1/assets/items/by-slot-type/${slot_type}`, { timeout: 5000 });
             data = response.data;
         } catch (error) {
             if (error.response?.status !== 404 && error.response?.status !== 400) throw error;
         }
-
-        //tomt
-        data = [];
 
         const items = data.map(item => ({
             id: item.id,
