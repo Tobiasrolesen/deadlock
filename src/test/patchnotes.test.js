@@ -39,7 +39,7 @@ test('Tjekke datoen for hentet patchnote', async () => {
     patchnotes.forEach((patchnote) => {
         expect(patchnote).toHaveProperty('pub_date');
 
-        //Tjekke at den hentede patchnotes dato er er forståelig for JavaScript
+        //Tjekke at den hentede patchnotes dato er forståelig for JavaScript
         const parsedDate = Date.parse(patchnote.pub_date);
         expect(parsedDate).not.toBeNaN();
     });
