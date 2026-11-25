@@ -1,6 +1,7 @@
 import { test, expect } from 'vitest';
 import request from 'supertest';
 import app from '../app.js';
+import { sortMatches } from '../services/userService.js';
 
 test('GET /api/user/id returns correct id', async t => {
     const id = "76561198200356797"
@@ -32,6 +33,66 @@ test('GET /api/user/id/hero-stats returns profiles hero stats', async t => {
 });
 
 
+// ----- Mest spillede helte -----
+
+//Test for sorteringsmetode virker
+test('Sortering af spilletid lokalt', () => {
+    const mockHeroes = [
+        {
+            "name": "Infernus",
+            "time_played": 7002
+        },
+        {
+            "name": "Billy",
+            "time_played": 2884
+        },
+        {
+            "name": "Rem",
+            "time_played": 37642
+        }
+    ];
+
+    const sorted = sortMatches(mockHeroes);
+    expect(sorted[0].name).toBe('Rem');
+    expect(sorted[1].name).toBe('Infernus');
+    expect(sorted[2].name).toBe('Billy');
+});
+
+//Sorter efter mest spillede helte
+test('Heroliste sorteret efter mest spillede helte', async () => {
+    const userId = "240091069"
+    const response = await request(app).get(`/api/user/${userId}/herolist`);
+    expect(response.status).toBe(200);
+
+    const herolist = response.body;
+
+    expect(Array.isArray(herolist)).toBe(true);
+
+    for(let i = 0; i < herolist.length; i++){
+        const current = herolist[i].time_played;
+        const next = herolist[i + 1].time_played;
+
+        expect(current).toBeGreaterThanOrEqual(next);
+    }
+});
+
+//Liste af helte har navne
+test('Hentede heroliste har navn', async () => {
+    const userId = "240091069"
+    const response = await request(app).get(`/api/user/${userId}/herolist`);
+    expect(response.status).toBe(200);
+
+    const herolist = response.body;
+
+    expect(Array.isArray(herolist)).toBe(true);
+    for(let i = 0; i < herolist.length - 1; i++){
+        console.log(response.body);
+        expect(herolist[i]).toHaveProperty('hero_name');
+        expect(typeof herolist[i].hero_name).toBe('string');
+    }
+});
+
+/// ----- -----
 //matches test
 test('GET /api/user/id/matches returns matches associated with id', async t => {
     const id = "240091069"

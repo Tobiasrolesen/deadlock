@@ -48,6 +48,7 @@ export async function getHeroStatsByUserId(user_id) {
 
     } catch (err) {
         console.log(err);
+        throw err;
     }
 }
 

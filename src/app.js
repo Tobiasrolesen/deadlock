@@ -13,5 +13,6 @@ app.use(express.json());
 app.use("/api/user", userRoutes);
 app.use("/api/deadlock/patchnotes", patchnotesRoutes);
 app.use("/api/deadlock/items", itemsRoutes);
+app.use("/api/heroes", heroesRoutes);
 
 export default app;
