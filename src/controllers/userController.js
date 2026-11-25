@@ -8,7 +8,7 @@ async function getYourHeroes(req, res, serviceFunction, errorMessage){
         return res.status(200).json(heroList);
     } catch (err){
         console.log(err);
-        return res.status(500).json({
+        return res.status(503).json({
             message: errorMessage
         });
     }
