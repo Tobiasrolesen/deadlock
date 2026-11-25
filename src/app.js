@@ -2,6 +2,7 @@ import express from "express";
 import mongoose from "mongoose";
 import userRoutes from "./routes/userRoutes.js";
 import patchnotesRoutes from './routes/patchnotesRoutes.js'
+import heroesRoutes from './routes/heroesRoutes.js'
 import itemsRoutes from "./routes/itemsRoutes.js";
 
 //Mongoose connection
@@ -12,6 +13,7 @@ app.use(express.json());
 
 app.use("/api/user", userRoutes);
 app.use("/api/deadlock/patchnotes", patchnotesRoutes);
+app.use("/api/heroes", heroesRoutes);
 app.use("/api/deadlock/items", itemsRoutes);
 
 export default app;
