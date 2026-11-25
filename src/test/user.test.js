@@ -2,7 +2,6 @@ import { test, expect } from 'vitest';
 import request from 'supertest';
 import app from '../app.js';
 import { sortPlayedHeroes } from '../services/userService.js';
-import { sortMatches } from '../services/userService.js';
 
 test('GET /api/user/id returns correct id', async t => {
     const id = "76561198200356797"
@@ -96,7 +95,7 @@ test('Hentede heroliste har navn', async () => {
 // ----- Sorteringsmetoder til spillede helte -----
 
 //Sorteret efter totale wins
-test('Heroliste sorteret efter winrate', async () => {
+test('Heroliste sorteret efter wins', async () => {
     const userId = "240091069"
     const response = await request(app).get(`/api/user/${userId}/herolist/sortedWins`);
     expect(response.status).toBe(200);
