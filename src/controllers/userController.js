@@ -43,6 +43,7 @@ export async function getPlayedHeroes(req, res){
             message: "Kunne ikke hente brugerens helte"
         });
     }
+}
 
 export async function getMatchHistoryByUserId(req, res){
     const user = await userService.getMatchHistoryByUserId(req.params.id);
