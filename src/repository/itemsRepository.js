@@ -26,7 +26,7 @@ export async function getItemByHeroId(id) {
     try {
         let data;
         try {
-            const response = await axios.get(`https://api.deadlock-api.com/v1/assets/items/by-hero/${id}`, { timeout: 5000 });
+            const response = await axios.get(`https://api.deadlock-api.com/v1/assets/items/by-hero-id/${id}`, { timeout: 5000 });
             data = response.data;
         } catch (error) {
             if (error.response?.status !== 404) throw error;
@@ -67,6 +67,9 @@ export async function getItemBySlotType(slot_type) {
         } catch (error) {
             if (error.response?.status !== 404 && error.response?.status !== 400) throw error;
         }
+
+        //tomt
+        data = [];
 
         const items = data.map(item => ({
             id: item.id,
