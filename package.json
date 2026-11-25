@@ -5,7 +5,7 @@
   "main": "server.js",
   "type": "module",
   "scripts": {
-    "test": "vitest run",
+    "test": "node_modules/.bin/vitest run",
     "start": "node server.js"
   },
   "private": true,
