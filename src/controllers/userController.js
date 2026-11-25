@@ -30,6 +30,21 @@ export async function getHeroStatsByUserId(req, res){
     return res.status(200).json(user)
 }
 
+export async function getPlayedHeroes(req, res){
+    try {
+        const heroList = await userService.getPlayedHeroes(req.params.id);
+
+        return res.status(200).json(heroList);
+
+    } catch (err) {
+        console.log(err);
+
+        return res.status(503).json({
+            message: "Kunne ikke hente brugerens helte"
+        });
+    }
+}
+
 export async function getMatchHistoryByUserId(req, res){
     const user = await userService.getMatchHistoryByUserId(req.params.id);
     if (!user){
