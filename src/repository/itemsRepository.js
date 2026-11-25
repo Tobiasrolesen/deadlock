@@ -68,6 +68,9 @@ export async function getItemBySlotType(slot_type) {
             if (error.response?.status !== 404 && error.response?.status !== 400) throw error;
         }
 
+        //tomt
+        data = [];
+
         const items = data.map(item => ({
             id: item.id,
             name: item.name,
