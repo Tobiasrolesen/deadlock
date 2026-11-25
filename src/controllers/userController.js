@@ -29,3 +29,13 @@ export async function getHeroStatsByUserId(req, res){
     }
     return res.status(200).json(user)
 }
+
+export async function getMatchHistoryByUserId(req, res){
+    const user = await userService.getMatchHistoryByUserId(req.params.id);
+    if (!user){
+        return res.status(404).send({
+            message: "No matches were found"
+        })
+    }
+    return res.status(200).json(user);
+}
