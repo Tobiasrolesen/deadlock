@@ -1,8 +1,6 @@
 import * as userRepository from "../repository/userRepository.js";
-<<<<<<< HEAD
-=======
+
 import { fetchHero } from '../repository/heroesRepository.js'
->>>>>>> origin/main
 
 export async function getUserById(id) {
     return await userRepository.getUserById(id);
@@ -15,8 +13,6 @@ export async function getUserByName(name){
 export async function getHeroStatsByUserId(id){
     return await userRepository.getHeroStatsByUserId(id)
 }
-<<<<<<< HEAD
-=======
 
 export async function getPlayedHeroes(id){
     const herolist = await userRepository.getHeroStatsByUserId(id);
@@ -49,4 +45,3 @@ export function sortMatches(herolist){
 export async function getMatchHistoryByUserId(id){
     return await userRepository.getMatchHistoryByUserId(id);
 }
->>>>>>> origin/main
