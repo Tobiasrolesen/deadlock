@@ -68,7 +68,7 @@ test('Heroliste sorteret efter mest spillede helte', async () => {
 
     expect(Array.isArray(herolist)).toBe(true);
 
-    for(let i = 0; i < herolist.length - 1; i++){
+    for(let i = 0; i < herolist.length; i++){
         const current = herolist[i].time_played;
         const next = herolist[i + 1].time_played;
 
