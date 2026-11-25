@@ -26,7 +26,7 @@ export async function getItemByHeroId(id) {
     try {
         let data;
         try {
-            const response = await axios.get(`https://api.deadlock-api.com/v1/assets/items/by-hero/${id}`, { timeout: 5000 });
+            const response = await axios.get(`https://api.deadlock-api.com/v1/assets/items/by-hero-id/${id}`, { timeout: 5000 });
             data = response.data;
         } catch (error) {
             if (error.response?.status !== 404) throw error;
