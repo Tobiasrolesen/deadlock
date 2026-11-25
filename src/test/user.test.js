@@ -2,6 +2,7 @@ import { test, expect } from 'vitest';
 import request from 'supertest';
 import app from '../app.js';
 import { sortPlayedHeroes } from '../services/userService.js';
+import { sortMatches } from '../services/userService.js';
 
 test('GET /api/user/id returns correct id', async t => {
     const id = "76561198200356797"
