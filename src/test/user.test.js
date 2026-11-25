@@ -87,9 +87,9 @@ test('Hentede heroliste har navn', async () => {
     expect(Array.isArray(herolist)).toBe(true);
     for(let i = 0; i < herolist.length - 1; i++){
         console.log(response.body);
-        expect(herolist[i]).toHaveProperty('name');
-        expect(typeof herolist[i].name).toBe('string');
+        expect(herolist[i]).toHaveProperty('hero_name');
+        expect(typeof herolist[i].hero_name).toBe('string');
     }
-})
+});
 
 /// ----- -----
