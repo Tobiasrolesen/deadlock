@@ -39,4 +39,6 @@ export function sortMatches(herolist){
     return [...herolist].sort(
         (a, b) => b.time_played - a.time_played
     );
+export async function getMatchHistoryByUserId(id){
+    return await userRepository.getMatchHistoryByUserId(id);
 }
