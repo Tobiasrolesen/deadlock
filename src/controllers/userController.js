@@ -1,5 +1,21 @@
 import * as userService from "../services/userService.js";
 
+//gentagen funktion til at hente sine egne helte
+async function getYourHeroes(req, res, serviceFunction, errorMessage){
+    try {
+        const heroList = await serviceFunction(req.params.id);
+
+        return res.status(200).json(heroList);
+    } catch (err){
+        console.log(err);
+        return res.status(503).json({
+            message: errorMessage
+        });
+    }
+}
+
+
+
 export async function getUserById(req, res) {
     const user = await userService.getUserById(req.params.id);
     if (!user) {
@@ -31,18 +47,48 @@ export async function getHeroStatsByUserId(req, res){
 }
 
 export async function getPlayedHeroes(req, res){
-    try {
-        const heroList = await userService.getPlayedHeroes(req.params.id);
+    return getYourHeroes(
+        req,
+        res,
+        userService.getPlayedHeroes,
+        "Kunne ikke hente brugerens helte"
+    );
+}
 
-        return res.status(200).json(heroList);
+export async function getHeroesByWins(req, res){
+    return getYourHeroes(
+        req,
+        res,
+        userService.getHeroesByWins,
+        "Kunne ikke hente brugerens helte sorteret efter wins"
+    );
+}
 
-    } catch (err) {
-        console.log(err);
+export async function getHeroesByMatches(req, res){
+    return getYourHeroes(
+        req,
+        res,
+        userService.getHeroesByMatches,
+        "Kunne ikke hente brugerens helte sorteret efter matches"
+    );
+}
 
-        return res.status(503).json({
-            message: "Kunne ikke hente brugerens helte"
-        });
-    }
+export async function getHeroesByKills(req, res){
+    return getYourHeroes(
+        req,
+        res,
+        userService.getHeroesByKills,
+        "Kunne ikke hente brugerens helte sorteret efter kills"
+    );
+}
+
+export async function getHeroesByDeaths(req, res){
+    return getYourHeroes(
+        req,
+        res,
+        userService.getHeroesByDeaths,
+        "Kunne ikke hente brugerens helte sorteret efter deaths"
+    );
 }
 
 export async function getMatchHistoryByUserId(req, res){

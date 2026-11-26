@@ -1,8 +1,7 @@
 import { test, expect } from 'vitest';
 import request from 'supertest';
 import app from '../app.js';
-import { sortMatches } from '../services/userService.js';
-
+import { sortPlayedHeroes } from '../services/userService.js';
 
 test('GET /api/user/id returns correct id', async t => {
     const id = "76561198200356797"
@@ -33,6 +32,9 @@ test('GET /api/user/id/hero-stats returns profiles hero stats', async t => {
     expect(response.body[0].account_id).toBe(Number(id));
 });
 
+
+// ----- Mest spillede helte -----
+
 //Test for sorteringsmetode virker
 test('Sortering af spilletid lokalt', () => {
     const mockHeroes = [
@@ -50,7 +52,7 @@ test('Sortering af spilletid lokalt', () => {
         }
     ];
 
-    const sorted = sortMatches(mockHeroes);
+    const sorted = sortPlayedHeroes(mockHeroes);
     expect(sorted[0].name).toBe('Rem');
     expect(sorted[1].name).toBe('Infernus');
     expect(sorted[2].name).toBe('Billy');
@@ -90,6 +92,77 @@ test('Hentede heroliste har navn', async () => {
     }
 });
 
+// ----- Sorteringsmetoder til spillede helte -----
+
+//Sorteret efter totale wins
+test('Heroliste sorteret efter wins', async () => {
+    const userId = "240091069"
+    const response = await request(app).get(`/api/user/${userId}/herolist/sortedWins`);
+    expect(response.status).toBe(200);
+
+    const herolist = response.body;
+    expect(Array.isArray(herolist)).toBe(true);
+    for(let i = 0; i < herolist.length - 1; i++){
+        const current = herolist[i].wins;
+        const next = herolist[i + 1].wins;
+
+        expect(current).toBeGreaterThanOrEqual(next);
+    }
+});
+
+//Sorteret efter totale matches
+test('Heroliste sorteret efter matches', async () => {
+    const userId = "240091069"
+    const response = await request(app).get(`/api/user/${userId}/herolist/sortedMatches`);
+    expect(response.status).toBe(200);
+
+    const herolist = response.body;
+    expect(Array.isArray(herolist)).toBe(true);
+    for(let i = 0; i < herolist.length - 1; i++){
+        const current = herolist[i].matches_played;
+        const next = herolist[i + 1].matches_played;
+
+        expect(current).toBeGreaterThanOrEqual(next);
+    }
+});
+
+//Sorteret efter totale kills
+test('Heroliste sorteret efter kills', async () => {
+    const userId = "240091069"
+    const response = await request(app).get(`/api/user/${userId}/herolist/sortedKills`);
+    expect(response.status).toBe(200);
+
+    const herolist = response.body;
+    expect(Array.isArray(herolist)).toBe(true);
+    for(let i = 0; i < herolist.length - 1; i++){
+        const current = herolist[i].kills;
+        const next = herolist[i + 1].kills;
+
+        expect(current).toBeGreaterThanOrEqual(next);
+    }
+});
+
+
+//Sorteret efter totale deaths
+test('Heroliste sorteret efter deaths', async () => {
+    const userId = "240091069"
+    const response = await request(app).get(`/api/user/${userId}/herolist/sortedDeaths`);
+    expect(response.status).toBe(200);
+
+    const herolist = response.body;
+    expect(Array.isArray(herolist)).toBe(true);
+    for(let i = 0; i < herolist.length - 1; i++){
+        const current = herolist[i].deaths;
+        const next = herolist[i + 1].deaths;
+
+        expect(current).toBeGreaterThanOrEqual(next);
+    }
+});
+
+
+/// ----- -----
+
+//matches test
 test('GET /api/user/id/matches returns matches associated with id', async t => {
     const id = "240091069"
     const response = await request(app).get(`/api/user/${id}/matches`);

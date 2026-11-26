@@ -1,8 +1,3 @@
-<<<<<<< HEAD
-import { test } from 'vitest';
-
-test.todo('Items');
-=======
 import { test, expect } from 'vitest';
 import request from 'supertest';
 import app from '../app.js';
@@ -67,4 +62,3 @@ test('Hente items by id', async () =>{
     expect(item).toBeInstanceOf(Object);
     expect(item).toHaveProperty('id', 2521299219);
 });
->>>>>>> origin/main
