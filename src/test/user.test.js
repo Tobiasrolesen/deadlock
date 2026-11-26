@@ -1,10 +1,8 @@
 import { test, expect } from 'vitest';
 import request from 'supertest';
 import app from '../app.js';
-<<<<<<< HEAD
-=======
 import { sortMatches } from '../services/userService.js';
->>>>>>> origin/main
+
 
 test('GET /api/user/id returns correct id', async t => {
     const id = "76561198200356797"
@@ -34,11 +32,6 @@ test('GET /api/user/id/hero-stats returns profiles hero stats', async t => {
     expect(Array.isArray(response.body)).toBe(true);
     expect(response.body[0].account_id).toBe(Number(id));
 });
-<<<<<<< HEAD
-=======
-
-
-// ----- Mest spillede helte -----
 
 //Test for sorteringsmetode virker
 test('Sortering af spilletid lokalt', () => {
@@ -73,7 +66,7 @@ test('Heroliste sorteret efter mest spillede helte', async () => {
 
     expect(Array.isArray(herolist)).toBe(true);
 
-    for(let i = 0; i < herolist.length; i++){
+    for(let i = 0; i < herolist.length - 1; i++){
         const current = herolist[i].time_played;
         const next = herolist[i + 1].time_played;
 
@@ -97,14 +90,13 @@ test('Hentede heroliste har navn', async () => {
     }
 });
 
-/// ----- -----
-//matches test
 test('GET /api/user/id/matches returns matches associated with id', async t => {
     const id = "240091069"
     const response = await request(app).get(`/api/user/${id}/matches`);
     expect(response.status).toBe(200);
     expect(Array.isArray(response.body)).toBe(true);
     expect(response.body[0].account_id).toBe(Number(id));
+    expect(response.body[0]).toHaveProperty('start_time');
 });
 
 test('GET /api/user/id/matches returns 404 for no matches found', async t => {
@@ -117,4 +109,3 @@ test('GET /api/user/id/matches returns 404 for no matches found', async t => {
 
 
 
->>>>>>> origin/main

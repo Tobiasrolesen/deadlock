@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 import {expect, test} from 'vitest';
 import request from "supertest";
 import app from "../app.js";
@@ -41,7 +41,7 @@ test('GET /api/deadlock/scoreboards/heroes/:heroId rejects non-numeric IDs', asy
 
     expect(response.status).toBe(400);
 });
-=======
+
 import { test, expect } from 'vitest';
 import request from 'supertest';
 import app from '../app.js';
@@ -54,9 +54,3 @@ test('GET /api/heroes/:1 returnerer navnet Infernus', async () => {
     expect(response.status).toBe(200);
     expect(response.body.name).toBe('Infernus');
 });
-
-
-
-
-
->>>>>>> origin/main
