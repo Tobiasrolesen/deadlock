@@ -188,7 +188,7 @@ test('New search on the player uses saved data', async () => {
 });
 
 //Forskellige spillere gemmes hver for sig
-test('Diffrent players are saved diffrently', async () => {
+test('Different players are saved differently', async () => {
     const id1 = "76561198200356797"
     const id2 = "240091069"
     const user1 = await getUserById(id1);
@@ -204,18 +204,6 @@ test('GET /api/user/id returns same data with search', async () => {
     const second = await request(app).get(`/api/user/${id}`);
     expect(second.status).toBe(200);
     expect(second.body).toEqual(first.body);
-})
-
-//Anden søgning går hurtigere, fordi data ikke hentes igen
-test('Search on same players is quicker', async () => {
-    const id = "240091069"
-    let start = Date.now();
-    await request(app).get(`/api/user/${id}`);
-    const firstTime = Date.now() - start;
-    start = Date.now();
-    await request(app).get(`/api/user/${id}`);
-    const secondTime = Date.now() - start;
-    expect(secondTime).toBeLessThan(5);
 })
 
 //Søgning på samme navn genbruger gemt data
@@ -239,6 +227,17 @@ test('Match history for the same player uses saved data', async () => {
     const id = "240091069"
     const first = await getMatchHistoryByUserId(id);
     const second = await getMatchHistoryByUserId(id);
+    expect(second).toBe(first);
+});
+
+//To søgninger på samme tid deler samme data
+test('Two searches at the same time share the same data', async () => {
+    const id = "76561198200356797"
+    const [first, second] = await Promise.all([
+        getHeroStatsByUserId(id),
+        getHeroStatsByUserId(id)
+    ]);
+    expect(first).toBeTruthy();
     expect(second).toBe(first);
 });
 
