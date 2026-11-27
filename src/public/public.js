@@ -11,6 +11,37 @@ const patchnotesStatus = document.querySelector("#patchnotes-status");
 const heroScoreboard = document.querySelector("#hero-scoreboard");
 const heroScoreboardStatus = document.querySelector("#hero-scoreboard-status");
 
+const matchHistoryButton = document.querySelector("#match-history-button");
+const matchHistoryDialog = document.querySelector("#match-history-dialog");
+const matchHistoryClose = document.querySelector("#match-history-close");
+const matchHistoryStatus = document.querySelector("#match-history-status");
+const matchHistoryList = document.querySelector("#match-history-list");
+const heroDetailsDialog = document.querySelector("#hero-details-dialog");
+const heroDetailsClose = document.querySelector("#hero-details-close");
+const heroDetailsTitle = document.querySelector("#hero-details-title");
+const heroDetailsStatus = document.querySelector("#hero-details-status");
+const heroDetailsContent = document.querySelector("#hero-details-content");
+const heroMatchesButton = document.querySelector("#hero-matches-button");
+const heroDetailsImage = document.querySelector("#hero-details-image");
+const heroDetailsName = document.querySelector("#hero-details-name");
+const heroDetailsDescription = document.querySelector("#hero-details-description");
+const heroDetailsDescriptionShort = document.querySelector("#hero-details-description-short");
+const heroMatchesDialog = document.getElementById("hero-matches-dialog");
+const heroMatchesClose = document.getElementById("hero-matches-close");
+const heroMatchesTitle = document.getElementById("hero-matches-title");
+const heroMatchesStatus = document.getElementById("hero-matches-status");
+const heroMatchesList = document.getElementById("hero-matches-list");
+
+const playerHeroList = document.querySelector("#player-hero-list");
+const heroListCount = document.querySelector("#hero-record-count");
+
+let selectedHeroId = null;
+let currentPlayerId = null;
+let currentPlayerName = "";
+const matchHeroDetailsCache = new Map();
+let matchHistoryRenderVersion = 0;
+let playedHeroesRenderVersion = 0;
+
 const formatNumber = value => new Intl.NumberFormat("en-US", {
     maximumFractionDigits: 1,
 }).format(value);
@@ -46,7 +77,7 @@ function resetStats() {
     [
         "#win-rate", "#kd-ratio", "#matches-played", "#damage-per-minute",
         "#total-wins", "#total-kills", "#total-deaths", "#total-assists",
-        "#hero-count", "#hero-record-count", "#networth-per-minute", "#accuracy",
+        "#hero-count", "#hero-record-count",
     ].forEach(selector => {
         document.querySelector(selector).textContent = "—";
     });
@@ -58,6 +89,15 @@ function renderPlayer(player) {
     document.querySelector("#steam-id").textContent = `Steam ID: ${player.account_id}`;
     document.querySelector("#profile-updated").textContent = "Profile loaded just now";
     avatarFallback.textContent = (player.personaname || "DL").slice(0, 2).toUpperCase();
+
+    playedHeroesRenderVersion++;
+    playerHeroList.replaceChildren();
+
+    const loadingMessage = document.createElement("p");
+    loadingMessage.textContent = "Loading player's heroes...";
+    playerHeroList.append(loadingMessage);
+
+    heroListCount.textContent = "—";
 
     try {
         const avatarUrl = new URL(player.avatar);
@@ -82,6 +122,11 @@ function renderPlayer(player) {
     favoriteButton.hidden = false;
     updateFavoriteButton(player.account_id);
     resetStats();
+    showTrendMessage("Loading recent match history…");
+    matchHistoryButton.disabled = true;
+    matchHistoryButton.textContent = "Loading match history…";
+    matchHistoryStatus.textContent = "Loading this player's match history…";
+    matchHistoryList.replaceChildren();
     profileContent.hidden = false;
     profileContent.scrollIntoView({ behavior: "smooth", block: "start" });
 }
@@ -113,8 +158,6 @@ function renderStats(records) {
     const winRate = totals.matches > 0 ? (totals.wins / totals.matches) * 100 : 0;
     const kdRatio = totals.deaths > 0 ? totals.kills / totals.deaths : totals.kills;
     const damagePerMinute = weightedAverage(records, "damage_per_min");
-    const networthPerMinute = weightedAverage(records, "networth_per_min");
-    const accuracy = weightedAverage(records, "accuracy");
 
     document.querySelector("#win-rate").textContent = `${formatNumber(winRate)}%`;
     document.querySelector("#kd-ratio").textContent = formatNumber(kdRatio);
@@ -126,8 +169,6 @@ function renderStats(records) {
     document.querySelector("#total-assists").textContent = formatNumber(totals.assists);
     document.querySelector("#hero-count").textContent = `${records.length} tracked ${records.length === 1 ? "hero" : "heroes"}`;
     document.querySelector("#hero-record-count").textContent = formatNumber(records.length);
-    document.querySelector("#networth-per-minute").textContent = networthPerMinute === null ? "—" : formatNumber(networthPerMinute);
-    document.querySelector("#accuracy").textContent = accuracy === null ? "—" : `${formatNumber(accuracy)}%`;
 
     setProgress("#win-rate-bar", winRate);
     setProgress("#kd-bar", kdRatio, Math.max(kdRatio, 3));
@@ -144,6 +185,213 @@ async function fetchJson(url) {
 
     return data;
 }
+
+function showTrendMessage(message) {
+    ["#trend-kd", "#trend-deaths"].forEach(selector => {
+        const element = document.querySelector(selector);
+        element.className = "trend-indicator";
+        element.textContent = message;
+    });
+}
+
+function renderTrend(element, trend, metricName) {
+    const labels = {
+        better: "Better",
+        worse: "Worse",
+        same: "Unchanged",
+    };
+
+    const arrows = {
+        better: "↑",
+        worse: "↓",
+        same: "→",
+    };
+
+    element.className = `trend-indicator is-${trend.state}`;
+    element.textContent = `${arrows[trend.state]} ${labels[trend.state]} (${formatNumber(trend.current)} vs ${formatNumber(trend.previous)})`;
+    element.setAttribute("aria-label", `${metricName}: ${labels[trend.state]}, latest match ${formatNumber(trend.current)} compared with previous match ${formatNumber(trend.previous)}`);
+}
+
+function renderMatchTrends(matches) {
+    const comparison = window.DeadlockMatchTrends.compareLatest(matches);
+    if (!comparison) {
+        showTrendMessage("Need two matches with timestamps and stats");
+        return;
+    }
+
+    renderTrend(document.querySelector("#trend-kd"), comparison.kd, "K/D ratio");
+    renderTrend(document.querySelector("#trend-deaths"), comparison.deaths, "Deaths");
+}
+
+function formatMatchValue(value) {
+    return value !== null && value !== undefined && value !== "" && Number.isFinite(Number(value))
+        ? formatNumber(Number(value))
+        : "—";
+}
+
+function createMatchStatCard(label, value, note, state = null) {
+    const card = document.createElement("div");
+    card.className = `match-history-stat-card${state ? ` is-${state}` : ""}`;
+
+    const title = document.createElement("span");
+    title.className = "match-history-stat-label";
+    title.textContent = label;
+
+    const valueRow = document.createElement("div");
+    valueRow.className = "match-history-stat-value-row";
+    const statValue = document.createElement("span");
+    statValue.className = "match-history-stat-value";
+    statValue.textContent = value;
+    valueRow.append(statValue);
+
+    if (state) {
+        const arrows = { better: "↑", worse: "↓", same: "→" };
+        const arrow = document.createElement("span");
+        arrow.className = "match-history-stat-arrow";
+        arrow.setAttribute("aria-hidden", "true");
+        arrow.textContent = arrows[state];
+        valueRow.append(arrow);
+    }
+
+    const description = document.createElement("span");
+    description.className = `match-history-stat-note${state ? ` is-${state}` : ""}`;
+    description.textContent = note;
+
+    card.append(title, valueRow, description);
+    return card;
+}
+
+function fetchMatchHeroDetails(heroId) {
+    const key = String(heroId);
+    if (!matchHeroDetailsCache.has(key)) {
+        const request = fetchJson(`/api/deadlock/scoreboards/heroes/${encodeURIComponent(key)}`)
+            .then(hero => ({
+                name: typeof hero?.name === "string" ? hero.name : null,
+                image: typeof hero?.image === "string" ? hero.image : null,
+            }))
+            .catch(() => {
+                matchHeroDetailsCache.delete(key);
+                return { name: null, image: null };
+            });
+        matchHeroDetailsCache.set(key, request);
+    }
+    return matchHeroDetailsCache.get(key);
+}
+
+function createMatchHistoryItem(entry) {
+    const { match } = entry;
+    const item = document.createElement("li");
+    item.className = "match-history-item";
+
+    const heading = document.createElement("div");
+    heading.className = "match-history-heading";
+    const titleGroup = document.createElement("div");
+    titleGroup.className = "match-history-title";
+    const title = document.createElement("h3");
+    title.textContent = `Match #${formatMatchValue(entry.matchNumber)}`;
+    titleGroup.append(title);
+
+    const details = document.createElement("p");
+    details.className = "match-history-subtitle";
+    const heroImage = document.createElement("img");
+    heroImage.className = "match-history-hero-image";
+    heroImage.alt = "";
+    heroImage.loading = "lazy";
+    heroImage.hidden = true;
+    const heroName = document.createElement("span");
+    heroName.className = "match-history-hero";
+    heroName.textContent = formatMatchValue(match.hero_id);
+    const heroLevel = document.createElement("span");
+    heroLevel.className = "match-history-hero-level";
+    heroLevel.textContent = `Level ${formatMatchValue(match.hero_level)}`;
+    const heroInfo = document.createElement("span");
+    heroInfo.className = "match-history-hero-info";
+    heroInfo.append(heroName, heroLevel);
+    if (match.hero_id !== null && match.hero_id !== undefined && match.hero_id !== "") {
+        heroName.dataset.heroId = String(match.hero_id);
+        heroImage.dataset.heroId = String(match.hero_id);
+    }
+    details.append(heroImage, heroInfo);
+
+    const matchMeta = document.createElement("div");
+    matchMeta.className = "match-history-meta";
+    const outcome = window.DeadlockMatchTrends.getMatchOutcome(match);
+    if (outcome) {
+        const result = document.createElement("span");
+        result.className = `match-result-badge is-${outcome}`;
+        result.textContent = { win: "Victory", loss: "Defeat" }[outcome];
+        matchMeta.append(result);
+    }
+    const playedAt = document.createElement("time");
+    const startTime = Number(match.start_time);
+    const playedDate = Number.isFinite(startTime)
+        ? new Date(startTime < 1e12 ? startTime * 1000 : startTime)
+        : null;
+    if (playedDate && Number.isFinite(playedDate.getTime())) {
+        playedAt.dateTime = playedDate.toISOString();
+        playedAt.textContent = new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeStyle: "short" }).format(playedDate);
+    } else {
+        playedAt.textContent = "Date unavailable";
+    }
+    matchMeta.append(playedAt);
+    titleGroup.append(details);
+    heading.append(titleGroup, matchMeta);
+
+    const trendNotes = { better: "Better than previous", worse: "Worse than previous", same: "Same as previous" };
+    const kdNote = entry.kd
+        ? trendNotes[entry.kd.state]
+        : entry.hasPreviousMatch ? "Trend unavailable" : "No previous match";
+    const stats = document.createElement("div");
+    stats.className = "match-history-stat-grid";
+    stats.append(
+        createMatchStatCard("K/D ratio", formatMatchValue(entry.kdRatio), kdNote, entry.kd?.state ?? null),
+        createMatchStatCard("Game duration", window.DeadlockMatchTrends.formatMatchDuration(match.match_duration_s), "Total playtime")
+    );
+
+    item.append(heading, stats);
+    return item;
+}
+
+function renderMatchHistory(matches) {
+    const history = window.DeadlockMatchTrends.compareHistory(matches);
+    const renderVersion = ++matchHistoryRenderVersion;
+    matchHistoryList.replaceChildren(...history.map(createMatchHistoryItem));
+    matchHistoryStatus.textContent = history.length
+        ? `Showing ${history.length} matches, newest first. Each arrow compares the match with the one played before it.`
+        : "No matches are available for this player.";
+    matchHistoryButton.textContent = `View match history (${history.length})`;
+    matchHistoryButton.disabled = false;
+
+    const heroIds = [...new Set(history
+        .map(entry => entry.match.hero_id)
+        .filter(heroId => heroId !== null && heroId !== undefined && heroId !== ""))];
+    Promise.all(heroIds.map(async heroId => [String(heroId), await fetchMatchHeroDetails(heroId)]))
+        .then(heroDetails => {
+            if (renderVersion !== matchHistoryRenderVersion) return;
+            const detailsById = new Map(heroDetails);
+            matchHistoryList.querySelectorAll(".match-history-hero[data-hero-id]").forEach(element => {
+                const name = detailsById.get(element.dataset.heroId)?.name;
+                if (name) element.textContent = name;
+            });
+            matchHistoryList.querySelectorAll(".match-history-hero-image[data-hero-id]").forEach(element => {
+                const hero = detailsById.get(element.dataset.heroId);
+                if (!hero?.image) return;
+
+                try {
+                    const imageUrl = new URL(hero.image);
+                    if (imageUrl.protocol !== "https:") return;
+                    element.src = imageUrl.href;
+                    element.alt = hero.name ? `${hero.name} portrait` : "Hero portrait";
+                    element.hidden = false;
+                    element.onerror = () => element.remove();
+                } catch {
+                    // Keep the hero name visible if the API did not provide a valid image URL.
+                }
+            });
+        });
+}
+
+
 
 function getPatchnoteSummary(content) {
     if (typeof content !== "string") return "Read the full patch notes for details.";
@@ -292,6 +540,203 @@ async function loadPatchnotes() {
     }
 }
 
+async function loadPlayedHeroes(records) {
+    const renderVersion = ++playedHeroesRenderVersion;
+
+    playerHeroList.replaceChildren();
+    heroListCount.textContent = "Loading...";
+
+    if (!Array.isArray(records) || records.length === 0) {
+        heroListCount.textContent = "0 heroes";
+        playerHeroList.textContent = "No played heroes found.";
+        return;
+    }
+
+    // Fjern eventuelle records uden et gyldigt hero ID.
+    const heroes = records.filter(hero =>
+        hero.hero_id !== null &&
+        hero.hero_id !== undefined &&
+        hero.hero_id !== ""
+    );
+
+    if (heroes.length === 0) {
+        heroListCount.textContent = "0 heroes";
+        playerHeroList.textContent = "No played heroes found.";
+        return;
+    }
+
+    heroListCount.textContent = `${heroes.length} heroes`;
+
+    // Vis en midlertidig besked, mens hero-data hentes.
+    playerHeroList.textContent = "Loading heroes...";
+
+    try {
+        const heroCards = await Promise.all(
+            heroes.map(async record => {
+                const details = await fetchMatchHeroDetails(record.hero_id);
+
+                const card = document.createElement("article");
+                card.className = "played-hero-card";
+                card.style.cursor = "pointer";
+
+                card.addEventListener("click", () => {
+                    openHeroDetails(record.hero_id, details);
+                });
+
+                // Hero image
+                const image = document.createElement("img");
+                image.className = "played-hero-image";
+                image.alt = details.name
+                    ? `${details.name} portrait`
+                    : "Hero portrait";
+                image.loading = "lazy";
+                image.hidden = true;
+
+                if (details.image) {
+                    try {
+                        const imageUrl = new URL(details.image);
+
+                        if (imageUrl.protocol === "https:" ||
+                            imageUrl.protocol === "http:") {
+                            image.src = imageUrl.href;
+                            image.hidden = false;
+                            image.onerror = () => image.remove();
+                        }
+                    } catch {
+                        // Hero name and match count remain visible.
+                    }
+                }
+
+                // Hero name
+                const name = document.createElement("h3");
+                name.className = "played-hero-name";
+                name.textContent =
+                    details.name || `Hero ${record.hero_id}`;
+
+                // Matches played
+                const matches = document.createElement("p");
+                matches.className = "played-hero-matches";
+                matches.textContent =
+                    `${formatNumber(record.matches_played)} matches`;
+
+                card.append(image, name, matches);
+
+                return card;
+            })
+        );
+
+        // Undgå at en gammel søgning overskriver en nyere.
+        if (renderVersion !== playedHeroesRenderVersion) return;
+
+        playerHeroList.replaceChildren(...heroCards);
+
+    } catch (error) {
+        console.error("Could not load played heroes:", error);
+
+        if (renderVersion !== playedHeroesRenderVersion) return;
+
+        heroListCount.textContent = "Unavailable";
+        playerHeroList.textContent = "Could not load this player's heroes.";
+    }
+}
+
+async function openHeroDetails(heroId, details) {
+    selectedHeroId = heroId;
+
+    heroDetailsTitle.textContent = `${currentPlayerName}'s Hero Stats`;
+
+    heroDetailsName.textContent = details.name || `Hero ${heroId}`;
+    heroDetailsImage.src = details.image || "";
+    heroDetailsImage.alt = details.name || "Hero";
+
+    heroDetailsStatus.textContent = "Loading hero stats...";
+    heroDetailsContent.replaceChildren();
+    heroMatchesButton.disabled = true;
+
+    heroDetailsDialog.showModal();
+
+    try {
+        const stats = await fetchJson(
+            `/api/user/${encodeURIComponent(currentPlayerId)}/herolist/${encodeURIComponent(heroId)}`
+        );
+
+        const statLabels = {
+            matches_played: "Matches played",
+            wins: "Wins",
+            kills: "Kills",
+            deaths: "Deaths",
+            assists: "Assists",
+            accuracy: "Accuracy"
+        };
+
+        const winRate = stats.matches_played > 0
+            ? (stats.wins / stats.matches_played * 100).toFixed(1) + "%"
+            : "0%";
+
+        const accuracy = (Number(stats.accuracy) * 100).toFixed(1) + "%";
+
+        const displayStats = {
+            matches_played: stats.matches_played,
+            win_rate: winRate,
+            wins: stats.wins,
+            kills: stats.kills,
+            deaths: stats.deaths,
+            assists: stats.assists,
+            accuracy: accuracy,
+        };
+
+        const displayLabels = {
+            ...statLabels,
+            win_rate: "Win rate"
+        };
+
+        // Kort beskrivelse under heltens navn
+        heroDetailsDescriptionShort.textContent =
+            formatHeroDescription(stats.hero_details.description?.role) || "Hero role is not available yet";
+
+        // Uddybende beskrivelse
+        heroDetailsDescription.textContent = [
+            stats.hero_details.description?.lore,
+            stats.hero_details.description?.role,
+            stats.hero_details.description?.playstyle
+        ] .filter(Boolean)
+            .map(formatHeroDescription)
+            .join("\n ----- \n") || "Hero description is not available yet.";
+
+        Object.entries(displayStats).forEach(([key, value]) => {
+            if (value === undefined || value === null) return;
+
+            const card = document.createElement("article");
+            card.className = "hero-stat-card";
+
+            const label = document.createElement("p");
+            label.className = "hero-stat-label";
+            label.textContent = displayLabels[key] || key;
+
+            const statValue = document.createElement("p");
+            statValue.className = "hero-stat-value";
+            statValue.textContent = value;
+
+            card.append(label, statValue);
+            heroDetailsContent.append(card);
+        });
+
+        heroDetailsStatus.textContent = "";
+        heroMatchesButton.disabled = false;
+
+    } catch (error) {
+        console.error(error);
+        heroDetailsStatus.textContent = "Could not load hero stats.";
+    }
+}
+function formatHeroDescription(text) {
+    return (text || "")
+        .replace(/<br\s*\/?>/gi, "\n")
+        .replace(/<[^>]*>/g, "")
+        .trim();
+}
+
+
 loadHeroScoreboard();
 loadPatchnotes();
 
@@ -320,11 +765,24 @@ searchForm.addEventListener("submit", async event => {
 
     try {
         const player = await fetchJson(playerUrl);
+        currentPlayerId = player.account_id;
+        currentPlayerName = player.personaname;
         renderPlayer(player);
         playerLoaded = true;
 
         const records = await fetchJson(`/api/user/${encodeURIComponent(player.account_id)}/hero-stats`);
         renderStats(Array.isArray(records) ? records : []);
+
+        loadPlayedHeroes(Array.isArray(records) ? records : []);
+        try {
+            const matches = await fetchJson(`/api/user/${encodeURIComponent(player.account_id)}/matches`);
+            renderMatchTrends(matches);
+            renderMatchHistory(matches);
+        } catch {
+            showTrendMessage("Match history is unavailable");
+            matchHistoryButton.textContent = "Match history unavailable";
+            matchHistoryStatus.textContent = "Match history could not be loaded. Please try searching again later.";
+        }
         showStatus("Player stats loaded successfully.", "success");
     } catch (error) {
         const message = error.message === "User Not Found"
@@ -345,4 +803,125 @@ favoriteButton.addEventListener("click", () => {
     const isFavorite = favoriteButton.getAttribute("aria-pressed") === "true";
     localStorage.setItem(`deadlock-favorite-${accountId}`, String(!isFavorite));
     updateFavoriteButton(accountId);
+});
+
+matchHistoryButton.addEventListener("click", () => {
+    if (!matchHistoryButton.disabled) matchHistoryDialog.showModal();
+});
+
+matchHistoryClose.addEventListener("click", () => matchHistoryDialog.close());
+
+matchHistoryDialog.addEventListener("click", event => {
+    if (event.target === matchHistoryDialog) matchHistoryDialog.close();
+});
+
+heroMatchesButton.addEventListener("click", async () => {
+    if (!selectedHeroId || !currentPlayerId) return;
+
+    heroMatchesButton.disabled = true;
+
+    // Åbn den separate match-modal
+    heroMatchesDialog.showModal();
+
+    heroMatchesTitle.textContent =
+        `${heroDetailsName.textContent} - Match History`;
+
+    heroMatchesStatus.textContent = "Loading hero matches...";
+    heroMatchesList.replaceChildren();
+
+    try {
+        const matches = await fetchJson(
+            `/api/user/${encodeURIComponent(currentPlayerId)}/herolist/${encodeURIComponent(selectedHeroId)}/matches`
+        );
+
+        if (!Array.isArray(matches)) {
+            throw new Error("Unexpected hero matches response.");
+        }
+
+        // Brug samme sammenligningsfunktion som almindelig match history
+        const history = window.DeadlockMatchTrends.compareHistory(matches);
+
+        heroMatchesList.replaceChildren(
+            ...history.map(createMatchHistoryItem)
+        );
+
+        heroMatchesStatus.textContent = history.length
+            ? `Showing ${history.length} matches with this hero, newest first.`
+            : "No matches found for this hero.";
+
+        // Hent navne og billeder til heltene i kampene
+        const heroIds = [...new Set(
+            history
+                .map(entry => entry.match.hero_id)
+                .filter(id => id !== null && id !== undefined && id !== "")
+        )];
+
+        const heroDetails = await Promise.all(
+            heroIds.map(async id => [
+                String(id),
+                await fetchMatchHeroDetails(id)
+            ])
+        );
+
+        const detailsById = new Map(heroDetails);
+
+        // Opdater heltenes navne
+        heroMatchesList
+            .querySelectorAll(".match-history-hero[data-hero-id]")
+            .forEach(element => {
+                const name = detailsById.get(element.dataset.heroId)?.name;
+
+                if (name) {
+                    element.textContent = name;
+                }
+            });
+
+        // Opdater heltenes billeder
+        heroMatchesList
+            .querySelectorAll(".match-history-hero-image[data-hero-id]")
+            .forEach(element => {
+                const hero = detailsById.get(element.dataset.heroId);
+
+                if (!hero?.image) return;
+
+                try {
+                    const imageUrl = new URL(hero.image);
+
+                    if (imageUrl.protocol !== "https:") return;
+
+                    element.src = imageUrl.href;
+                    element.alt = hero.name
+                        ? `${hero.name} portrait`
+                        : "Hero portrait";
+
+                    element.hidden = false;
+                    element.onerror = () => element.remove();
+                } catch {
+                    // Heroens navn vises stadig, selvom billedet mangler.
+                }
+            });
+
+    } catch (error) {
+        console.error("Could not load hero matches:", error);
+
+        heroMatchesStatus.textContent =
+            "Could not load matches for this hero.";
+
+    } finally {
+        heroMatchesButton.disabled = false;
+    }
+});
+
+heroDetailsClose.addEventListener("click", () => {
+    heroDetailsDialog.close();
+});
+
+heroMatchesClose.addEventListener("click", () => {
+    heroMatchesDialog.close();
+});
+
+heroMatchesDialog.addEventListener("click", event => {
+    if (event.target === heroMatchesDialog) {
+        heroMatchesDialog.close();
+    }
 });

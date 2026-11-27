@@ -86,9 +86,8 @@ test('Hentede heroliste har navn', async () => {
 
     expect(Array.isArray(herolist)).toBe(true);
     for(let i = 0; i < herolist.length - 1; i++){
-        console.log(response.body);
-        expect(herolist[i]).toHaveProperty('hero_name');
-        expect(typeof herolist[i].hero_name).toBe('string');
+        expect(herolist[i]).toHaveProperty('hero_details.name');
+        expect(typeof herolist[i].hero_details.name).toBe('string');
     }
 });
 
@@ -159,6 +158,36 @@ test('Heroliste sorteret efter deaths', async () => {
     }
 });
 
+/// ----- Kamphistorik/stats for specifik helt man har spillet -----
+//Hente enkelt helts stats
+test('GET stats for specific user', async () => {
+    const userId = "240091069";
+    const heroId = "31"
+    const response = await request(app).get(`/api/user/${userId}/herolist/${heroId}`);
+    expect(response.status).toBe(200);
+
+    expect(response.body).toHaveProperty('matches_played');
+    expect(response.body).toHaveProperty('wins');
+    expect(response.body).toHaveProperty('kills');
+    expect(response.body).toHaveProperty('deaths');
+    expect(response.body).toHaveProperty('assists');
+    expect(response.body).toHaveProperty('accuracy');
+});
+
+//Hente kamphistorik for enkelt helt
+test('GET matchhistory for specific hero', async () => {
+    const userId = "240091069";
+    const heroId = "31";
+    const response = await request(app).get(`/api/user/${userId}/herolist/${heroId}/matches`);
+    expect(response.status).toBe(200);
+    const matchlist = response.body
+
+    expect(Array.isArray(matchlist)).toBe(true);
+    for(let i = 0; i < matchlist.length; i++){
+        expect(response.body[i]).toHaveProperty('match_id');
+    }
+});
+
 
 /// ----- -----
 
@@ -177,7 +206,4 @@ test('GET /api/user/id/matches returns 404 for no matches found', async t => {
     expect(response.status).toBe(404);
     expect(response.body.message).toBe("No matches were found");
 });
-
-
-
 
