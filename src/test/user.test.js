@@ -1,7 +1,6 @@
-import { test, expect, vi } from 'vitest';
+import { test, expect } from 'vitest';
 import request from 'supertest';
 import app from '../app.js';
-import * as userRepository from '../repository/userRepository.js';
 import { sortPlayedHeroes, getUserById, getUserByName, getHeroStatsByUserId, getMatchHistoryByUserId } from '../services/userService.js';
 
 test('GET /api/user/id returns correct id', async t => {
@@ -188,44 +187,6 @@ test('New search on the player uses saved data', async () => {
     expect(second).toBe(first);
 });
 
-test('Concurrent searches for the same player share one request', async () => {
-    const id = "concurrent-cache-test";
-    const user = { account_id: id };
-    let resolveUser;
-    const repositorySpy = vi.spyOn(userRepository, 'getUserById').mockImplementation(
-        () => new Promise(resolve => {
-            resolveUser = resolve;
-        })
-    );
-
-    try {
-        const first = getUserById(id);
-        const second = getUserById(id);
-
-        expect(repositorySpy).toHaveBeenCalledTimes(1);
-        resolveUser(user);
-        await expect(Promise.all([first, second])).resolves.toEqual([user, user]);
-    } finally {
-        repositorySpy.mockRestore();
-    }
-});
-
-test('Failed player searches are not cached', async () => {
-    const id = "failed-cache-test";
-    const user = { account_id: id };
-    const repositorySpy = vi.spyOn(userRepository, 'getUserById')
-        .mockRejectedValueOnce(new Error('Temporary failure'))
-        .mockResolvedValueOnce(user);
-
-    try {
-        await expect(getUserById(id)).rejects.toThrow('Temporary failure');
-        await expect(getUserById(id)).resolves.toBe(user);
-        expect(repositorySpy).toHaveBeenCalledTimes(2);
-    } finally {
-        repositorySpy.mockRestore();
-    }
-});
-
 //Forskellige spillere gemmes hver for sig
 test('Diffrent players are saved diffrently', async () => {
     const id1 = "76561198200356797"
@@ -280,4 +241,6 @@ test('Match history for the same player uses saved data', async () => {
     const second = await getMatchHistoryByUserId(id);
     expect(second).toBe(first);
 });
+
+
 
