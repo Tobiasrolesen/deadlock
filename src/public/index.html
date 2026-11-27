@@ -148,16 +148,43 @@
                     </div>
                     <button class="history-button" id="match-history-button" type="button" aria-haspopup="dialog" aria-controls="match-history-dialog" disabled>Loading match history…</button>
                 </header>
-                <dl class="details-list">
-                    <div class="details-row">
-                        <dt>K/D ratio</dt>
-                        <dd id="trend-kd" class="trend-indicator">—</dd>
-                    </div>
-                    <div class="details-row">
-                        <dt>Deaths</dt>
-                        <dd id="trend-deaths" class="trend-indicator">—</dd>
-                    </div>
-                </dl>
+                <div class="trend-match-context" id="trend-match-context" aria-live="polite">
+                    <span class="trend-result-badge" id="trend-result">Result unavailable</span>
+                    <span class="trend-hero" id="trend-hero">Search for a player to see their latest hero.</span>
+                </div>
+                <p class="trend-status" id="trend-status" role="status" aria-live="polite">Search for a player to compare recent matches.</p>
+                <div class="trend-stat-grid">
+                    <article class="trend-stat-card">
+                        <div class="trend-stat-heading">
+                            <h3>K/D ratio</h3>
+                            <span id="trend-kd" class="trend-indicator">—</span>
+                        </div>
+                        <div class="trend-stat-values">
+                            <div class="trend-stat-value"><span>Latest</span><strong id="trend-kd-current">—</strong></div>
+                            <span class="trend-stat-versus" aria-hidden="true">vs</span>
+                            <div class="trend-stat-value"><span>Previous</span><strong id="trend-kd-previous">—</strong></div>
+                        </div>
+                    </article>
+                    <article class="trend-stat-card">
+                        <div class="trend-stat-heading"><h3>K/D/A</h3></div>
+                        <div class="trend-stat-values">
+                            <div class="trend-stat-value"><span>Latest</span><strong id="trend-kda">—</strong></div>
+                            <span class="trend-stat-versus" aria-hidden="true">vs</span>
+                            <div class="trend-stat-value"><span>Previous</span><strong id="trend-kda-previous">—</strong></div>
+                        </div>
+                    </article>
+                    <article class="trend-stat-card">
+                        <div class="trend-stat-heading">
+                            <h3>Deaths</h3>
+                            <span id="trend-deaths" class="trend-indicator">—</span>
+                        </div>
+                        <div class="trend-stat-values">
+                            <div class="trend-stat-value"><span>Latest</span><strong id="trend-deaths-current">—</strong></div>
+                            <span class="trend-stat-versus" aria-hidden="true">vs</span>
+                            <div class="trend-stat-value"><span>Previous</span><strong id="trend-deaths-previous">—</strong></div>
+                        </div>
+                    </article>
+                </div>
             </section>
 
             <div class="content-grid">

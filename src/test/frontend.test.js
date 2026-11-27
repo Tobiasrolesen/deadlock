@@ -15,7 +15,10 @@ test('GET / serves the overview page and its frontend assets', async () => {
     expect(page.text).toContain('id="player-search"');
     expect(page.text).toContain('id="profile-content"');
     expect(page.text).toContain('id="trend-kd"');
+    expect(page.text).toContain('id="trend-kda"');
     expect(page.text).toContain('id="trend-deaths"');
+    expect(page.text).toContain('id="trend-result"');
+    expect(page.text).toContain('id="trend-hero"');
     expect(page.text).toContain('id="match-history-button"');
     expect(page.text).toContain('id="match-history-dialog"');
     expect(page.text).toContain('id="match-history-list"');
@@ -32,6 +35,8 @@ test('GET / serves the overview page and its frontend assets', async () => {
     expect(stylesheet.text).toContain('.match-history-stat-grid');
     expect(stylesheet.text).toContain('.match-history-stat-card.is-worse');
     expect(stylesheet.text).toContain('.match-history-hero-image');
+    expect(stylesheet.text).toContain('.trend-stat-grid');
+    expect(stylesheet.text).toContain('.trend-result-badge.is-win');
 
     const script = await request(app).get('/public.js');
     expect(script.status).toBe(200);
@@ -47,6 +52,8 @@ test('GET / serves the overview page and its frontend assets', async () => {
     expect(script.text).toContain('fetchMatchHeroDetails');
     expect(script.text).toContain('match-history-hero-image');
     expect(script.text).toContain('Match #${formatMatchValue(entry.matchNumber)}');
+    expect(script.text).toContain('formatKda(comparison.match)');
+    expect(script.text).toContain('getMatchOutcome(comparison.match)');
 });
 
 test('frontend script parses as a classic browser script', () => {
@@ -135,6 +142,7 @@ test('match history is sorted newest first and compares every match with the one
     expect(history[0].kd.state).toBe('better');
     expect(history[0].kdRatio).toBe(4);
     expect(history[0].deaths.state).toBe('better');
+    expect(history[0].previousMatch.match_id).toBe(200);
     expect(history[1].kd.state).toBe('same');
     expect(history[1].kdRatio).toBe(1);
     expect(history[1].deaths.state).toBe('same');
