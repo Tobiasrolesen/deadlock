@@ -42,20 +42,13 @@
                 </form>
                 <p class="search-prompt">Search by player name or Steam ID. Match lookup is not supported yet.</p>
             </div>
-            <aside class="hero-showcase" aria-label="Available player insights">
-                <div class="showcase-topline"><span>PLAYER INSIGHTS</span><span class="live-dot">API DATA</span></div>
-                <div class="showcase-orbit" aria-hidden="true"><span></span><i></i><b></b></div>
-                <div class="showcase-feature">
-                    <span class="showcase-icon" aria-hidden="true">✦</span>
-                    <div><h2>Make every match count</h2><p>Look up a player to reveal their tracked performance.</p></div>
-                </div>
-                <div class="showcase-tags" aria-label="Available statistics">
-                    <span>WIN RATE</span><span>K / D</span><span>HERO STATS</span>
-                </div>
-            </aside>
-        </section>
+            <div class="showcase-tags" aria-label="Available statistics">
+                <span>WIN RATE</span><span>K / D</span><span>HERO STATS</span>
+            </div>
+        </aside>
+    </section>
 
-        <p class="status-message" id="status-message" role="status" aria-live="polite"></p>
+    <p class="status-message" id="status-message" role="status" aria-live="polite"></p>
 
         <section class="player-section" id="player-stats" aria-labelledby="player-section-title">
             <header class="section-heading player-section-heading">
@@ -88,151 +81,187 @@
                 </button>
             </section>
 
-            <section class="stat-grid" aria-label="Player overview statistics">
-                <article class="stat-card">
-                    <p class="stat-label">WIN RATE</p>
-                    <p class="stat-value" id="win-rate">—</p>
-                    <p class="stat-caption">of tracked matches won</p>
-                    <div class="progress-track" role="progressbar" aria-label="Win rate" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-                        <span id="win-rate-bar"></span>
-                    </div>
-                </article>
-                <article class="stat-card kda-stat-card">
-                    <p class="stat-label">KDA RATIO</p>
-                    <p class="stat-value" id="kda-ratio">—</p>
-                    <p class="stat-caption">The average K/D/A pr. match</p>
-                    <p class="kda-average" id="average-kda">—</p>
-                </article>
-                <article class="stat-card">
-                    <p class="stat-label">MATCHES PLAYED</p>
-                    <p class="stat-value" id="matches-played">—</p>
-                    <p class="stat-caption">across tracked hero stats</p>
-                    <span class="stat-chip" id="hero-count">— tracked heroes</span>
-                </article>
-                <article class="stat-card">
-                    <p class="stat-label">AVG. DAMAGE / MIN</p>
-                    <p class="stat-value" id="damage-per-minute">—</p>
-                    <p class="stat-caption">weighted by matches played</p>
-                    <div class="progress-track" aria-hidden="true"><span id="damage-bar"></span></div>
-                </article>
-            </section>
-
-            <section class="panel trend-panel" aria-labelledby="trend-title">
+            <aside class="panel side-panel" aria-labelledby="hero-pool-title">
                 <header class="panel-heading">
                     <div>
-                        <h2 id="trend-title">Match-to-match trend</h2>
-                        <p>Latest match compared with the previous match.</p>
+                        <h2 id="hero-pool-title">Hero Performance</h2>
+                        <p>Choose a hero to view individual performance.</p>
                     </div>
-                    <button class="history-button" id="match-history-button" type="button" aria-haspopup="dialog" aria-controls="match-history-dialog" disabled>Loading match history…</button>
                 </header>
-                <div class="trend-match-context" id="trend-match-context" aria-live="polite">
-                    <span class="trend-result-badge" id="trend-result">Result unavailable</span>
-                    <span class="trend-hero" id="trend-hero">Search for a player to see their latest hero.</span>
+
+                <div class="hero-pool-summary">
+                    <span class="pool-icon" aria-hidden="true">✦</span>
+                    <div>
+                        <p class="summary-value" id="hero-record-count">—</p>
+                        <p class="summary-label">heroes played</p>
+                    </div>
                 </div>
-                <p class="trend-status" id="trend-status" role="status" aria-live="polite">Search for a player to compare recent matches.</p>
-                <div class="trend-stat-grid">
-                    <article class="trend-stat-card">
-                        <div class="trend-stat-heading">
-                            <h3>K/D ratio</h3>
-                            <span id="trend-kd" class="trend-indicator">—</span>
-                        </div>
-                        <div class="trend-stat-values">
-                            <div class="trend-stat-value"><span>Latest</span><strong id="trend-kd-current">—</strong></div>
-                            <span class="trend-stat-versus" aria-hidden="true">vs</span>
-                            <div class="trend-stat-value"><span>Previous</span><strong id="trend-kd-previous">—</strong></div>
-                        </div>
-                    </article>
-                    <article class="trend-stat-card">
-                        <div class="trend-stat-heading"><h3>K/D/A</h3></div>
-                        <div class="trend-stat-values">
-                            <div class="trend-stat-value"><span>Latest</span><strong id="trend-kda">—</strong></div>
-                            <span class="trend-stat-versus" aria-hidden="true">vs</span>
-                            <div class="trend-stat-value"><span>Previous</span><strong id="trend-kda-previous">—</strong></div>
-                        </div>
-                    </article>
-                    <article class="trend-stat-card">
-                        <div class="trend-stat-heading">
-                            <h3>Deaths</h3>
-                            <span id="trend-deaths" class="trend-indicator">—</span>
-                        </div>
-                        <div class="trend-stat-values">
-                            <div class="trend-stat-value"><span>Latest</span><strong id="trend-deaths-current">—</strong></div>
-                            <span class="trend-stat-versus" aria-hidden="true">vs</span>
-                            <div class="trend-stat-value"><span>Previous</span><strong id="trend-deaths-previous">—</strong></div>
-                        </div>
-                    </article>
+
+                <div class="played-heroes-list" id="player-hero-list">
+                    <p>Search for a player to load their heroes.</p>
+                </div>
+            </aside>
+        </div>
+        <section class="panel selected-hero-panel" id="selected-hero-panel" hidden>
+            <header class="panel-heading">
+                <div>
+                    <h2 id="selected-hero-name">Selected hero</h2>
+                    <p id="selected-hero-description">Individual hero performance.</p>
+                </div>
+                <span class="panel-tag">HERO STATS</span>
+            </header>
+
+            <div class="selected-hero-content">
+                <img id="selected-hero-image" alt="" hidden>
+
+                <dl class="details-list">
+                    <div class="details-row">
+                        <dt>Matches played</dt>
+                        <dd id="selected-hero-matches">—</dd>
+                    </div>
+                    <div class="details-row">
+                        <dt>Wins</dt>
+                        <dd id="selected-hero-wins">—</dd>
+                    </div>
+                    <div class="details-row">
+                        <dt>Kills</dt>
+                        <dd id="selected-hero-kills">—</dd>
+                    </div>
+                    <div class="details-row">
+                        <dt>Deaths</dt>
+                        <dd id="selected-hero-deaths">—</dd>
+                    </div>
+                    <div class="details-row">
+                        <dt>Assists</dt>
+                        <dd id="selected-hero-assists">—</dd>
+                    </div>
+                    <div class="details-row">
+                        <dt>Accuracy</dt>
+                        <dd id="selected-hero-accuracy">—</dd>
+                    </div>
+                </dl>
+            </div>
+
+            <div class="selected-hero-matches-section">
+                <h3>Matches with this hero</h3>
+
+                <p id="selected-hero-matches-status" role="status" aria-live="polite">
+                    Select a hero to load matches.
+                </p>
+
+                <details class="hero-matches-accordion" id="selected-hero-matches-details">
+                    <summary>
+                        <span id="selected-hero-matches-label">Show matches</span>
+                        <span class="accordion-arrow" aria-hidden="true">⌄</span>
+                    </summary>
+
+                    <ol id="selected-hero-match-list"></ol>
+                </details>
+            </div>
+        </section>
+    </section>
+    <dialog class="match-history-dialog" id="match-history-dialog" aria-labelledby="match-history-title">
+        <div class="match-history-dialog-content">
+            <header class="match-history-dialog-heading">
+                <div>
+                    <h2 id="match-history-title">Match history</h2>
+                    <p>Each match is compared with the one played before it.</p>
+                </div>
+                <button class="dialog-close" id="match-history-close" type="button" aria-label="Close match history">×</button>
+            </header>
+            <p class="match-history-status" id="match-history-status" aria-live="polite">Search for a player to load match history.</p>
+            <ol class="match-history-list" id="match-history-list"></ol>
+        </div>
+    </dialog>
+    <dialog class="match-history-dialog hero-details-dialog" id="hero-details-dialog">
+        <div class="match-history-dialog-content">
+
+            <header class="match-history-dialog-heading">
+                <div>
+                    <p class="eyebrow">PLAYER PROFILE</p>
+                    <h2 id="hero-details-title">Player's Hero Stats</h2>
+                    <p>Performance with this hero</p>
+                </div>
+
+                <button class="dialog-close" id="hero-details-close"
+                        type="button" aria-label="Close">×</button>
+            </header>
+
+            <section class="hero-profile-header">
+                <img id="hero-details-image" class="hero-details-image"
+                     src="" alt="">
+
+                <div>
+                    <h3 id="hero-details-name">Hero name</h3>
+                    <p id="hero-details-description-short">
+                        Hero description
+                    </p>
                 </div>
             </section>
 
-            <div class="content-grid">
-                <section class="panel" id="hero-stats" aria-labelledby="hero-stats-title">
-                    <header class="panel-heading">
-                        <div>
-                            <h2 id="hero-stats-title">Career overview</h2>
-                            <p>Combined results from the available hero statistics.</p>
-                        </div>
-                        <span class="panel-tag">PLAYER STATS</span>
-                    </header>
-                    <dl class="details-list">
-                        <div class="details-row"><dt>Total wins</dt><dd id="total-wins">—</dd></div>
-                        <div class="details-row"><dt>Total kills</dt><dd id="total-kills">—</dd></div>
-                        <div class="details-row"><dt>Total deaths</dt><dd id="total-deaths">—</dd></div>
-                        <div class="details-row"><dt>Total assists</dt><dd id="total-assists">—</dd></div>
-                    </dl>
-                    <p class="panel-footer">Stats are calculated from the player’s tracked hero records.</p>
-                </section>
+            <section class="hero-stats-section">
+                <div class="hero-section-heading">
+                    <h3>Performance overview</h3>
+                    <span class="panel-tag">PLAYER STATS</span>
+                </div>
 
-                <aside class="panel side-panel" aria-labelledby="hero-pool-title">
-                    <header class="panel-heading">
-                        <div>
-                            <h2 id="hero-pool-title">Hero performance</h2>
-                            <p>A snapshot of your selected player's data.</p>
-                        </div>
-                    </header>
-                    <div class="hero-pool-summary">
-                        <span class="pool-icon" aria-hidden="true">✦</span>
-                        <div>
-                            <p class="summary-value" id="hero-record-count">—</p>
-                            <p class="summary-label">hero records available</p>
-                        </div>
-                    </div>
-                    <p class="panel-footer">Hero names are not included in the current hero-stats response.</p>
-                </aside>
-            </div>
-        </section>
+                <p id="hero-details-status" class="match-history-status">
+                    Loading hero stats...
+                </p>
 
-        <section class="popular-heroes-section" id="popular-heroes" aria-labelledby="popular-heroes-title">
-            <header class="section-heading">
-                <div><p class="eyebrow">GLOBAL TRENDS</p><h2 id="popular-heroes-title">Most played heroes</h2></div>
-                <p class="section-description">Popular picks in normal matches, ranked by matches played. Popularity is not a win-rate ranking.</p>
+                <div id="hero-details-content" class="hero-details-content"></div>
+            </section>
+
+            <button class="history-button hero-matches-button"
+                    id="hero-matches-button" type="button" disabled>
+                View hero matches
+            </button>
+
+            <section class="hero-description-section">
+                <div class="hero-section-heading">
+                    <h3>About this hero</h3>
+                    <span class="panel-tag">HERO INFO</span>
+                </div>
+
+                <p id="hero-details-description" class="hero-description-text">
+                    Hero description will appear here.
+                </p>
+            </section>
+
+
+        </div>
+    </dialog>
+    <dialog class="match-history-dialog hero-matches-dialog"
+            id="hero-matches-dialog"
+            aria-labelledby="hero-matches-title">
+
+        <div class="match-history-dialog-content">
+
+            <header class="match-history-dialog-heading">
+                <div>
+                    <p class="eyebrow">HERO MATCH HISTORY</p>
+                    <h2 id="hero-matches-title">Hero Matches</h2>
+                    <p>Each match is compared with the one played before it.</p>
+                </div>
+
+                <button class="dialog-close"
+                        id="hero-matches-close"
+                        type="button"
+                        aria-label="Close hero matches">×</button>
             </header>
-            <p class="hero-scoreboard-status" id="hero-scoreboard-status" role="status" aria-live="polite">Loading global hero stats…</p>
-            <div class="popular-hero-grid" id="hero-scoreboard" aria-label="Most played heroes"></div>
-        </section>
 
-        <section class="updates-section" id="updates" aria-labelledby="updates-title">
-            <header class="section-heading">
-                <div><p class="eyebrow">STAY IN THE KNOW</p><h2 id="updates-title">What’s new in Deadlock</h2></div>
-                <p class="section-description">Recent updates from the Deadlock API.</p>
-            </header>
-            <p class="patchnotes-status" id="patchnotes-status" role="status" aria-live="polite">Loading the latest updates…</p>
-            <div class="update-grid" id="patchnote-list"></div>
-        </section>
+            <p class="match-history-status"
+               id="hero-matches-status"
+               aria-live="polite">
+                Loading hero matches...
+            </p>
 
-        <dialog class="match-history-dialog" id="match-history-dialog" aria-labelledby="match-history-title">
-            <div class="match-history-dialog-content">
-                <header class="match-history-dialog-heading">
-                    <div>
-                        <h2 id="match-history-title">Match history</h2>
-                        <p>Each match is compared with the one played before it.</p>
-                    </div>
-                    <button class="dialog-close" id="match-history-close" type="button" aria-label="Close match history">×</button>
-                </header>
-                <p class="match-history-status" id="match-history-status" aria-live="polite">Search for a player to load match history.</p>
-                <ol class="match-history-list" id="match-history-list"></ol>
-            </div>
-        </dialog>
-        <footer class="site-footer">Afterhours Deadlock Tracker · Player statistics and updates provided by the Deadlock API</footer>
-    </main>
+            <ol class="match-history-list"
+                id="hero-matches-list"></ol>
+
+        </div>
+    </dialog>
+    <footer class="site-footer">Afterhours Deadlock Tracker · Player statistics and updates provided by the Deadlock API</footer>
+</main>
 </body>
 </html>

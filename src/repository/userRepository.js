@@ -85,6 +85,7 @@ export async function getMatchHistoryByUserId(user_id){
             match_id: data.match_id,
             start_time: data.start_time,
             hero_id: data.hero_id,
+            start_time: data.start_time,
             hero_level: data.hero_level,
             game_mode: data.game_mode,
             match_mode: data.match_mode,

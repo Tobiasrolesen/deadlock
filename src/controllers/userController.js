@@ -14,6 +14,20 @@ async function getYourHeroes(req, res, serviceFunction, errorMessage){
     }
 }
 
+//samme som ovenover men så det gælder for både userId og heroId
+async function getSpecificHero(req, res, serviceFunction, errorMessage, ...args){
+    try {
+        const heroData = await serviceFunction(req.params.id, ...args);
+
+        return res.status(200).json(heroData);
+    } catch (err){
+        console.log(err);
+        return res.status(503).json({
+            message: errorMessage
+        });
+    }
+}
+
 
 
 export async function getUserById(req, res) {
@@ -51,7 +65,7 @@ export async function getPlayedHeroes(req, res){
         req,
         res,
         userService.getPlayedHeroes,
-        "Kunne ikke hente brugerens helte"
+        "Could not load played heroes"
     );
 }
 
@@ -60,7 +74,7 @@ export async function getHeroesByWins(req, res){
         req,
         res,
         userService.getHeroesByWins,
-        "Kunne ikke hente brugerens helte sorteret efter wins"
+        "Could not load played heroes sorted by wins"
     );
 }
 
@@ -69,7 +83,7 @@ export async function getHeroesByMatches(req, res){
         req,
         res,
         userService.getHeroesByMatches,
-        "Kunne ikke hente brugerens helte sorteret efter matches"
+        "Could not load played heroes sorted by matches"
     );
 }
 
@@ -78,7 +92,7 @@ export async function getHeroesByKills(req, res){
         req,
         res,
         userService.getHeroesByKills,
-        "Kunne ikke hente brugerens helte sorteret efter kills"
+        "Could not load played heroes sorted by kills"
     );
 }
 
@@ -87,8 +101,28 @@ export async function getHeroesByDeaths(req, res){
         req,
         res,
         userService.getHeroesByDeaths,
-        "Kunne ikke hente brugerens helte sorteret efter deaths"
+        "Could not load played heroes sorted by deaths"
     );
+}
+
+export async function getSpecificHeroOfUser(req, res){
+    return getSpecificHero(
+        req,
+        res,
+        userService.getSpecificHeroOfUser,
+        "Could not load stats for this hero",
+        req.params.heroId
+    );
+}
+
+export async function getHerosMatchesOfUser(req, res){
+    return getSpecificHero(
+        req,
+        res,
+        userService.getHerosMatchesOfUser,
+        "Could not load matches for this hero",
+        req.params.heroId
+    )
 }
 
 export async function getMatchHistoryByUserId(req, res){

@@ -19,6 +19,37 @@ const matchHeroDetailsCache = new Map();
 let matchTrendRenderVersion = 0;
 let matchHistoryRenderVersion = 0;
 
+const matchHistoryButton = document.querySelector("#match-history-button");
+const matchHistoryDialog = document.querySelector("#match-history-dialog");
+const matchHistoryClose = document.querySelector("#match-history-close");
+const matchHistoryStatus = document.querySelector("#match-history-status");
+const matchHistoryList = document.querySelector("#match-history-list");
+const heroDetailsDialog = document.querySelector("#hero-details-dialog");
+const heroDetailsClose = document.querySelector("#hero-details-close");
+const heroDetailsTitle = document.querySelector("#hero-details-title");
+const heroDetailsStatus = document.querySelector("#hero-details-status");
+const heroDetailsContent = document.querySelector("#hero-details-content");
+const heroMatchesButton = document.querySelector("#hero-matches-button");
+const heroDetailsImage = document.querySelector("#hero-details-image");
+const heroDetailsName = document.querySelector("#hero-details-name");
+const heroDetailsDescription = document.querySelector("#hero-details-description");
+const heroDetailsDescriptionShort = document.querySelector("#hero-details-description-short");
+const heroMatchesDialog = document.getElementById("hero-matches-dialog");
+const heroMatchesClose = document.getElementById("hero-matches-close");
+const heroMatchesTitle = document.getElementById("hero-matches-title");
+const heroMatchesStatus = document.getElementById("hero-matches-status");
+const heroMatchesList = document.getElementById("hero-matches-list");
+
+const playerHeroList = document.querySelector("#player-hero-list");
+const heroListCount = document.querySelector("#hero-record-count");
+
+let selectedHeroId = null;
+let currentPlayerId = null;
+let currentPlayerName = "";
+const matchHeroDetailsCache = new Map();
+let matchHistoryRenderVersion = 0;
+let playedHeroesRenderVersion = 0;
+
 const formatNumber = value => new Intl.NumberFormat("en-US", {
     maximumFractionDigits: 1,
 }).format(value);
@@ -66,6 +97,15 @@ function renderPlayer(player) {
     document.querySelector("#steam-id").textContent = `Steam ID: ${player.account_id}`;
     document.querySelector("#profile-updated").textContent = "Profile loaded just now";
     avatarFallback.textContent = (player.personaname || "DL").slice(0, 2).toUpperCase();
+
+    playedHeroesRenderVersion++;
+    playerHeroList.replaceChildren();
+
+    const loadingMessage = document.createElement("p");
+    loadingMessage.textContent = "Loading player's heroes...";
+    playerHeroList.append(loadingMessage);
+
+    heroListCount.textContent = "—";
 
     try {
         const avatarUrl = new URL(player.avatar);
@@ -567,6 +607,203 @@ async function loadPatchnotes() {
     }
 }
 
+async function loadPlayedHeroes(records) {
+    const renderVersion = ++playedHeroesRenderVersion;
+
+    playerHeroList.replaceChildren();
+    heroListCount.textContent = "Loading...";
+
+    if (!Array.isArray(records) || records.length === 0) {
+        heroListCount.textContent = "0 heroes";
+        playerHeroList.textContent = "No played heroes found.";
+        return;
+    }
+
+    // Fjern eventuelle records uden et gyldigt hero ID.
+    const heroes = records.filter(hero =>
+        hero.hero_id !== null &&
+        hero.hero_id !== undefined &&
+        hero.hero_id !== ""
+    );
+
+    if (heroes.length === 0) {
+        heroListCount.textContent = "0 heroes";
+        playerHeroList.textContent = "No played heroes found.";
+        return;
+    }
+
+    heroListCount.textContent = `${heroes.length} heroes`;
+
+    // Vis en midlertidig besked, mens hero-data hentes.
+    playerHeroList.textContent = "Loading heroes...";
+
+    try {
+        const heroCards = await Promise.all(
+            heroes.map(async record => {
+                const details = await fetchMatchHeroDetails(record.hero_id);
+
+                const card = document.createElement("article");
+                card.className = "played-hero-card";
+                card.style.cursor = "pointer";
+
+                card.addEventListener("click", () => {
+                    openHeroDetails(record.hero_id, details);
+                });
+
+                // Hero image
+                const image = document.createElement("img");
+                image.className = "played-hero-image";
+                image.alt = details.name
+                    ? `${details.name} portrait`
+                    : "Hero portrait";
+                image.loading = "lazy";
+                image.hidden = true;
+
+                if (details.image) {
+                    try {
+                        const imageUrl = new URL(details.image);
+
+                        if (imageUrl.protocol === "https:" ||
+                            imageUrl.protocol === "http:") {
+                            image.src = imageUrl.href;
+                            image.hidden = false;
+                            image.onerror = () => image.remove();
+                        }
+                    } catch {
+                        // Hero name and match count remain visible.
+                    }
+                }
+
+                // Hero name
+                const name = document.createElement("h3");
+                name.className = "played-hero-name";
+                name.textContent =
+                    details.name || `Hero ${record.hero_id}`;
+
+                // Matches played
+                const matches = document.createElement("p");
+                matches.className = "played-hero-matches";
+                matches.textContent =
+                    `${formatNumber(record.matches_played)} matches`;
+
+                card.append(image, name, matches);
+
+                return card;
+            })
+        );
+
+        // Undgå at en gammel søgning overskriver en nyere.
+        if (renderVersion !== playedHeroesRenderVersion) return;
+
+        playerHeroList.replaceChildren(...heroCards);
+
+    } catch (error) {
+        console.error("Could not load played heroes:", error);
+
+        if (renderVersion !== playedHeroesRenderVersion) return;
+
+        heroListCount.textContent = "Unavailable";
+        playerHeroList.textContent = "Could not load this player's heroes.";
+    }
+}
+
+async function openHeroDetails(heroId, details) {
+    selectedHeroId = heroId;
+
+    heroDetailsTitle.textContent = `${currentPlayerName}'s Hero Stats`;
+
+    heroDetailsName.textContent = details.name || `Hero ${heroId}`;
+    heroDetailsImage.src = details.image || "";
+    heroDetailsImage.alt = details.name || "Hero";
+
+    heroDetailsStatus.textContent = "Loading hero stats...";
+    heroDetailsContent.replaceChildren();
+    heroMatchesButton.disabled = true;
+
+    heroDetailsDialog.showModal();
+
+    try {
+        const stats = await fetchJson(
+            `/api/user/${encodeURIComponent(currentPlayerId)}/herolist/${encodeURIComponent(heroId)}`
+        );
+
+        const statLabels = {
+            matches_played: "Matches played",
+            wins: "Wins",
+            kills: "Kills",
+            deaths: "Deaths",
+            assists: "Assists",
+            accuracy: "Accuracy"
+        };
+
+        const winRate = stats.matches_played > 0
+            ? (stats.wins / stats.matches_played * 100).toFixed(1) + "%"
+            : "0%";
+
+        const accuracy = (Number(stats.accuracy) * 100).toFixed(1) + "%";
+
+        const displayStats = {
+            matches_played: stats.matches_played,
+            win_rate: winRate,
+            wins: stats.wins,
+            kills: stats.kills,
+            deaths: stats.deaths,
+            assists: stats.assists,
+            accuracy: accuracy,
+        };
+
+        const displayLabels = {
+            ...statLabels,
+            win_rate: "Win rate"
+        };
+
+        // Kort beskrivelse under heltens navn
+        heroDetailsDescriptionShort.textContent =
+            formatHeroDescription(stats.hero_details.description?.role) || "Hero role is not available yet";
+
+        // Uddybende beskrivelse
+        heroDetailsDescription.textContent = [
+            stats.hero_details.description?.lore,
+            stats.hero_details.description?.role,
+            stats.hero_details.description?.playstyle
+        ] .filter(Boolean)
+            .map(formatHeroDescription)
+            .join("\n ----- \n") || "Hero description is not available yet.";
+
+        Object.entries(displayStats).forEach(([key, value]) => {
+            if (value === undefined || value === null) return;
+
+            const card = document.createElement("article");
+            card.className = "hero-stat-card";
+
+            const label = document.createElement("p");
+            label.className = "hero-stat-label";
+            label.textContent = displayLabels[key] || key;
+
+            const statValue = document.createElement("p");
+            statValue.className = "hero-stat-value";
+            statValue.textContent = value;
+
+            card.append(label, statValue);
+            heroDetailsContent.append(card);
+        });
+
+        heroDetailsStatus.textContent = "";
+        heroMatchesButton.disabled = false;
+
+    } catch (error) {
+        console.error(error);
+        heroDetailsStatus.textContent = "Could not load hero stats.";
+    }
+}
+function formatHeroDescription(text) {
+    return (text || "")
+        .replace(/<br\s*\/?>/gi, "\n")
+        .replace(/<[^>]*>/g, "")
+        .trim();
+}
+
+
 loadHeroScoreboard();
 loadPatchnotes();
 
@@ -595,11 +832,15 @@ searchForm.addEventListener("submit", async event => {
 
     try {
         const player = await fetchJson(playerUrl);
+        currentPlayerId = player.account_id;
+        currentPlayerName = player.personaname;
         renderPlayer(player);
         playerLoaded = true;
 
         const records = await fetchJson(`/api/user/${encodeURIComponent(player.account_id)}/hero-stats`);
         renderStats(Array.isArray(records) ? records : []);
+
+        loadPlayedHeroes(Array.isArray(records) ? records : []);
         try {
             const matches = await fetchJson(`/api/user/${encodeURIComponent(player.account_id)}/matches`);
             renderMatchTrends(matches);
@@ -639,4 +880,115 @@ matchHistoryClose.addEventListener("click", () => matchHistoryDialog.close());
 
 matchHistoryDialog.addEventListener("click", event => {
     if (event.target === matchHistoryDialog) matchHistoryDialog.close();
+});
+
+heroMatchesButton.addEventListener("click", async () => {
+    if (!selectedHeroId || !currentPlayerId) return;
+
+    heroMatchesButton.disabled = true;
+
+    // Åbn den separate match-modal
+    heroMatchesDialog.showModal();
+
+    heroMatchesTitle.textContent =
+        `${heroDetailsName.textContent} - Match History`;
+
+    heroMatchesStatus.textContent = "Loading hero matches...";
+    heroMatchesList.replaceChildren();
+
+    try {
+        const matches = await fetchJson(
+            `/api/user/${encodeURIComponent(currentPlayerId)}/herolist/${encodeURIComponent(selectedHeroId)}/matches`
+        );
+
+        if (!Array.isArray(matches)) {
+            throw new Error("Unexpected hero matches response.");
+        }
+
+        // Brug samme sammenligningsfunktion som almindelig match history
+        const history = window.DeadlockMatchTrends.compareHistory(matches);
+
+        heroMatchesList.replaceChildren(
+            ...history.map(createMatchHistoryItem)
+        );
+
+        heroMatchesStatus.textContent = history.length
+            ? `Showing ${history.length} matches with this hero, newest first.`
+            : "No matches found for this hero.";
+
+        // Hent navne og billeder til heltene i kampene
+        const heroIds = [...new Set(
+            history
+                .map(entry => entry.match.hero_id)
+                .filter(id => id !== null && id !== undefined && id !== "")
+        )];
+
+        const heroDetails = await Promise.all(
+            heroIds.map(async id => [
+                String(id),
+                await fetchMatchHeroDetails(id)
+            ])
+        );
+
+        const detailsById = new Map(heroDetails);
+
+        // Opdater heltenes navne
+        heroMatchesList
+            .querySelectorAll(".match-history-hero[data-hero-id]")
+            .forEach(element => {
+                const name = detailsById.get(element.dataset.heroId)?.name;
+
+                if (name) {
+                    element.textContent = name;
+                }
+            });
+
+        // Opdater heltenes billeder
+        heroMatchesList
+            .querySelectorAll(".match-history-hero-image[data-hero-id]")
+            .forEach(element => {
+                const hero = detailsById.get(element.dataset.heroId);
+
+                if (!hero?.image) return;
+
+                try {
+                    const imageUrl = new URL(hero.image);
+
+                    if (imageUrl.protocol !== "https:") return;
+
+                    element.src = imageUrl.href;
+                    element.alt = hero.name
+                        ? `${hero.name} portrait`
+                        : "Hero portrait";
+
+                    element.hidden = false;
+                    element.onerror = () => element.remove();
+                } catch {
+                    // Heroens navn vises stadig, selvom billedet mangler.
+                }
+            });
+
+    } catch (error) {
+        console.error("Could not load hero matches:", error);
+
+        heroMatchesStatus.textContent =
+            "Could not load matches for this hero.";
+
+    } finally {
+        heroMatchesButton.disabled = false;
+    }
+});
+
+heroDetailsClose.addEventListener("click", () => {
+    heroDetailsDialog.close();
+});
+
+heroMatchesClose.addEventListener("click", () => {
+    heroMatchesDialog.close();
+});
+
+heroMatchesDialog.addEventListener("click", event => {
+    if (event.target === heroMatchesDialog) {
+        heroMatchesDialog.close();
+    }
 });

@@ -27,7 +27,7 @@ async function useFetchHero(id) {
 
             return {
                 ...heroStats, //Beholder de eksisterende statisikker for spillerens hero
-                hero_name: hero.name
+                hero_details: hero //Henter alle detaljerne om helten herunder hero_details
             };
         })
     );
@@ -151,6 +151,46 @@ export async function getMatchHistoryByUserId(id) {
     }
 }
 
+export async function getSpecificHeroOfUser(id, heroId){
+    const allHeroes = await userRepository.getHeroStatsByUserId(id);
+    if (!allHeroes || allHeroes.length === 0) {
+        return [];
+    }
+    let specificHero;
+
+    for(let i = 0;i < allHeroes.length; i++){
+        if (allHeroes[i].hero_id == heroId){
+            specificHero = allHeroes[i];
+            break;
+        }
+    }
+
+    if (!specificHero){
+        const error = new Error("No played hero matches this id");
+        throw error;
+    }
+
+    const heroDetails = await fetchHero(heroId);
+    return {
+        ...specificHero,
+        hero_details: heroDetails
+    }
+
+}
+
+export async function getHerosMatchesOfUser(id, heroId){
+    const allMatches = await userRepository.getMatchHistoryByUserId(id);
+    if (!allMatches){
+        const error = new Error("No existing matches found for this user");
+        throw error;
+    }
+
+    const matchesWHero = allMatches.filter(match =>
+        String(match.hero_id) === String(heroId)
+    );
+
+    return matchesWHero;
+}
 //Hjælpefunktion til at hente data fra cachen hvis det ikke er udløbet
 function getFromCache(cache, key) {
     const saved = cache.get(key);

@@ -37,6 +37,7 @@ export async function fetchHeroScoreboard() {
                 class_name: data.class_name,
 
                 description: {
+                    lore: data.description?.lore,
                     role: data.description?.role,
                     playstyle: data.description?.playstyle
                 },
