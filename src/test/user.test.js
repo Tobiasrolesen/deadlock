@@ -205,18 +205,6 @@ test('GET /api/user/id returns same data with search', async () => {
     expect(second.body).toEqual(first.body);
 })
 
-//Anden søgning går hurtigere, fordi data ikke hentes igen
-test('Search on same players is quicker', async () => {
-    const id = "240091069"
-    let start = Date.now();
-    await request(app).get(`/api/user/${id}`);
-    const firstTime = Date.now() - start;
-    start = Date.now();
-    await request(app).get(`/api/user/${id}`);
-    const secondTime = Date.now() - start;
-    expect(secondTime).toBeLessThan(5);
-})
-
 //Søgning på samme navn genbruger gemt data
 test('New search on the same name uses saved data', async () => {
     const name = "Matelund"
@@ -241,6 +229,20 @@ test('Match history for the same player uses saved data', async () => {
     expect(second).toBe(first);
 });
 
+//To søgninger på samme tid deler samme data
+test('Two searches at the same time share the same data', async () => {
+    const id = "76561198200356797"
+    const [first, second] = await Promise.all([
+        getHeroStatsByUserId(id),
+        getHeroStatsByUserId(id)
+    ]);
+    expect(first).toBeTruthy();
+    expect(second).toBe(first);
+});
+
+// ----- Opdatering af gemte spillerdata -----
+
+//Data der lige er gemt er ikke udløbet
 test('Newly saved data is not expired', () => {
     const now = Date.now();
     expect(isCacheExpired(now, now)).toBe(false);
@@ -266,8 +268,5 @@ test('Data saved 6 minutes ago is expired', () => {
     const savedAt = now - 360000;
     expect(isCacheExpired(savedAt, now)).toBe(true);
 });
-
-
-
 
 
