@@ -2,8 +2,14 @@ import * as userRepository from "../repository/userRepository.js";
 
 import { fetchHero } from '../repository/heroesRepository.js'
 
+//Midlertidig cache til spillerdata
+const userCache = new Map();
+const userNameCache = new Map();
+const heroStatsCache = new Map();
+const matchCache = new Map();
+
 async function useFetchHero(id){
-    const herolist = await userRepository.getHeroStatsByUserId(id);
+    const herolist = await getHeroStatsByUserId(id);
     if (!herolist || herolist.length === 0) {
         return [];
     }
@@ -22,15 +28,36 @@ async function useFetchHero(id){
 }
 
 export async function getUserById(id) {
-    return await userRepository.getUserById(id);
+    if (userCache.has(id)){
+        return userCache.get(id);
+    }
+    const user = await userRepository.getUserById(id);
+    if (user){
+        userCache.set(id, user);
+    }
+    return user
 }
 
 export async function getUserByName(name){
-    return await userRepository.getUserByName(name);
+    if (userNameCache.has(name)){
+        return userNameCache.get(name);
+    }
+    const user = await userRepository.getUserByName(name)
+    if (user){
+        userNameCache.set(name, user);
+    }
+    return user
 }
 
 export async function getHeroStatsByUserId(id){
-    return await userRepository.getHeroStatsByUserId(id)
+    if (heroStatsCache.has(id)){
+        return heroStatsCache.get(id);
+    }
+    const heroStats = await userRepository.getHeroStatsByUserId(id);
+    if (heroStats){
+        heroStatsCache.set(id, heroStats);
+    }
+    return heroStats
 }
 
 export async function getPlayedHeroes(id){
@@ -68,5 +95,12 @@ export function sortPlayedHeroes(herolist, sortBy = 'time_played'){
 }
 
 export async function getMatchHistoryByUserId(id){
-    return await userRepository.getMatchHistoryByUserId(id);
+    if (matchCache.has(id)){
+        return matchCache.get(id);
+    }
+    const matches = await userRepository.getMatchHistoryByUserId(id);
+    if (matches){
+        matchCache.set(id, matches);
+    }
+    return matches
 }

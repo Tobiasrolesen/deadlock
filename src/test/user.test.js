@@ -1,7 +1,7 @@
 import { test, expect } from 'vitest';
 import request from 'supertest';
 import app from '../app.js';
-import { sortPlayedHeroes } from '../services/userService.js';
+import { sortPlayedHeroes, getUserById, getUserByName, getHeroStatsByUserId, getMatchHistoryByUserId } from '../services/userService.js';
 
 test('GET /api/user/id returns correct id', async t => {
     const id = "76561198200356797"
@@ -179,6 +179,68 @@ test('GET /api/user/id/matches returns 404 for no matches found', async t => {
     expect(response.body.message).toBe("No matches were found");
 });
 
+//En ny søgning bruger genbrugt data
+test('New search on the player uses saved data', async () => {
+    const id = "76561198149336497"
+    const first = await getUserById(id);
+    const second = await getUserById(id);
+    expect(second).toBe(first);
+});
+
+//Forskellige spillere gemmes hver for sig
+test('Diffrent players are saved diffrently', async () => {
+    const id1 = "76561198200356797"
+    const id2 = "240091069"
+    const user1 = await getUserById(id1);
+    const user2 = await getUserById(id2);
+    expect(user1.account_id).toBe(id1);
+    expect(user2.account_id).toBe(id2);
+})
+
+//Gemt data returneres korrekt gennem API'et
+test('GET /api/user/id returns same data with search', async () => {
+    const id = "76561198200356797"
+    const first = await request(app).get(`/api/user/${id}`);
+    const second = await request(app).get(`/api/user/${id}`);
+    expect(second.status).toBe(200);
+    expect(second.body).toEqual(first.body);
+})
+
+//Anden søgning går hurtigere, fordi data ikke hentes igen
+test('Search on same players is quicker', async () => {
+    const id = "240091069"
+    let start = Date.now();
+    await request(app).get(`/api/user/${id}`);
+    const firstTime = Date.now() - start;
+    start = Date.now();
+    await request(app).get(`/api/user/${id}`);
+    const secondTime = Date.now() - start;
+    expect(secondTime).toBeLessThan(5);
+})
+
+//Søgning på samme navn genbruger gemt data
+test('New search on the same name uses saved data', async () => {
+    const name = "Matelund"
+    const first = await getUserByName(name);
+    const second = await getUserByName(name);
+    expect(second).toBe(first);
+});
+
+//Hero stats for samme spiller genbruges
+test('Hero stats for the same player uses saved data', async () => {
+    const id = "240091069"
+    const first = await getHeroStatsByUserId(id);
+    const second = await getHeroStatsByUserId(id);
+    expect(second).toBe(first);
+});
+
+//Match history for samme spiller genbruges
+test('Match history for the same player uses saved data', async () => {
+    const id = "240091069"
+    const first = await getMatchHistoryByUserId(id);
+    const second = await getMatchHistoryByUserId(id);
+    expect(second).toBe(first);
+});
 
 
 
