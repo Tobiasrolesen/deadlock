@@ -10,6 +10,13 @@ const patchnoteList = document.querySelector("#patchnote-list");
 const patchnotesStatus = document.querySelector("#patchnotes-status");
 const heroScoreboard = document.querySelector("#hero-scoreboard");
 const heroScoreboardStatus = document.querySelector("#hero-scoreboard-status");
+const matchHistoryButton = document.querySelector("#match-history-button");
+const matchHistoryDialog = document.querySelector("#match-history-dialog");
+const matchHistoryClose = document.querySelector("#match-history-close");
+const matchHistoryStatus = document.querySelector("#match-history-status");
+const matchHistoryList = document.querySelector("#match-history-list");
+const matchHeroDetailsCache = new Map();
+let matchHistoryRenderVersion = 0;
 
 const formatNumber = value => new Intl.NumberFormat("en-US", {
     maximumFractionDigits: 1,
@@ -46,7 +53,7 @@ function resetStats() {
     [
         "#win-rate", "#kd-ratio", "#matches-played", "#damage-per-minute",
         "#total-wins", "#total-kills", "#total-deaths", "#total-assists",
-        "#hero-count", "#hero-record-count", "#networth-per-minute", "#accuracy",
+        "#hero-count", "#hero-record-count",
     ].forEach(selector => {
         document.querySelector(selector).textContent = "—";
     });
@@ -82,6 +89,11 @@ function renderPlayer(player) {
     favoriteButton.hidden = false;
     updateFavoriteButton(player.account_id);
     resetStats();
+    showTrendMessage("Loading recent match history…");
+    matchHistoryButton.disabled = true;
+    matchHistoryButton.textContent = "Loading match history…";
+    matchHistoryStatus.textContent = "Loading this player's match history…";
+    matchHistoryList.replaceChildren();
     profileContent.hidden = false;
     profileContent.scrollIntoView({ behavior: "smooth", block: "start" });
 }
@@ -113,8 +125,6 @@ function renderStats(records) {
     const winRate = totals.matches > 0 ? (totals.wins / totals.matches) * 100 : 0;
     const kdRatio = totals.deaths > 0 ? totals.kills / totals.deaths : totals.kills;
     const damagePerMinute = weightedAverage(records, "damage_per_min");
-    const networthPerMinute = weightedAverage(records, "networth_per_min");
-    const accuracy = weightedAverage(records, "accuracy");
 
     document.querySelector("#win-rate").textContent = `${formatNumber(winRate)}%`;
     document.querySelector("#kd-ratio").textContent = formatNumber(kdRatio);
@@ -126,8 +136,6 @@ function renderStats(records) {
     document.querySelector("#total-assists").textContent = formatNumber(totals.assists);
     document.querySelector("#hero-count").textContent = `${records.length} tracked ${records.length === 1 ? "hero" : "heroes"}`;
     document.querySelector("#hero-record-count").textContent = formatNumber(records.length);
-    document.querySelector("#networth-per-minute").textContent = networthPerMinute === null ? "—" : formatNumber(networthPerMinute);
-    document.querySelector("#accuracy").textContent = accuracy === null ? "—" : `${formatNumber(accuracy)}%`;
 
     setProgress("#win-rate-bar", winRate);
     setProgress("#kd-bar", kdRatio, Math.max(kdRatio, 3));
@@ -144,6 +152,213 @@ async function fetchJson(url) {
 
     return data;
 }
+
+function showTrendMessage(message) {
+    ["#trend-kd", "#trend-deaths"].forEach(selector => {
+        const element = document.querySelector(selector);
+        element.className = "trend-indicator";
+        element.textContent = message;
+    });
+}
+
+function renderTrend(element, trend, metricName) {
+    const labels = {
+        better: "Better",
+        worse: "Worse",
+        same: "Unchanged",
+    };
+
+    const arrows = {
+        better: "↑",
+        worse: "↓",
+        same: "→",
+    };
+
+    element.className = `trend-indicator is-${trend.state}`;
+    element.textContent = `${arrows[trend.state]} ${labels[trend.state]} (${formatNumber(trend.current)} vs ${formatNumber(trend.previous)})`;
+    element.setAttribute("aria-label", `${metricName}: ${labels[trend.state]}, latest match ${formatNumber(trend.current)} compared with previous match ${formatNumber(trend.previous)}`);
+}
+
+function renderMatchTrends(matches) {
+    const comparison = window.DeadlockMatchTrends.compareLatest(matches);
+    if (!comparison) {
+        showTrendMessage("Need two matches with timestamps and stats");
+        return;
+    }
+
+    renderTrend(document.querySelector("#trend-kd"), comparison.kd, "K/D ratio");
+    renderTrend(document.querySelector("#trend-deaths"), comparison.deaths, "Deaths");
+}
+
+function formatMatchValue(value) {
+    return value !== null && value !== undefined && value !== "" && Number.isFinite(Number(value))
+        ? formatNumber(Number(value))
+        : "—";
+}
+
+function createMatchStatCard(label, value, note, state = null) {
+    const card = document.createElement("div");
+    card.className = `match-history-stat-card${state ? ` is-${state}` : ""}`;
+
+    const title = document.createElement("span");
+    title.className = "match-history-stat-label";
+    title.textContent = label;
+
+    const valueRow = document.createElement("div");
+    valueRow.className = "match-history-stat-value-row";
+    const statValue = document.createElement("span");
+    statValue.className = "match-history-stat-value";
+    statValue.textContent = value;
+    valueRow.append(statValue);
+
+    if (state) {
+        const arrows = { better: "↑", worse: "↓", same: "→" };
+        const arrow = document.createElement("span");
+        arrow.className = "match-history-stat-arrow";
+        arrow.setAttribute("aria-hidden", "true");
+        arrow.textContent = arrows[state];
+        valueRow.append(arrow);
+    }
+
+    const description = document.createElement("span");
+    description.className = `match-history-stat-note${state ? ` is-${state}` : ""}`;
+    description.textContent = note;
+
+    card.append(title, valueRow, description);
+    return card;
+}
+
+function fetchMatchHeroDetails(heroId) {
+    const key = String(heroId);
+    if (!matchHeroDetailsCache.has(key)) {
+        const request = fetchJson(`/api/deadlock/scoreboards/heroes/${encodeURIComponent(key)}`)
+            .then(hero => ({
+                name: typeof hero?.name === "string" ? hero.name : null,
+                image: typeof hero?.image === "string" ? hero.image : null,
+            }))
+            .catch(() => {
+                matchHeroDetailsCache.delete(key);
+                return { name: null, image: null };
+            });
+        matchHeroDetailsCache.set(key, request);
+    }
+    return matchHeroDetailsCache.get(key);
+}
+
+function createMatchHistoryItem(entry) {
+    const { match } = entry;
+    const item = document.createElement("li");
+    item.className = "match-history-item";
+
+    const heading = document.createElement("div");
+    heading.className = "match-history-heading";
+    const titleGroup = document.createElement("div");
+    titleGroup.className = "match-history-title";
+    const title = document.createElement("h3");
+    title.textContent = `Match #${formatMatchValue(entry.matchNumber)}`;
+    titleGroup.append(title);
+
+    const details = document.createElement("p");
+    details.className = "match-history-subtitle";
+    const heroImage = document.createElement("img");
+    heroImage.className = "match-history-hero-image";
+    heroImage.alt = "";
+    heroImage.loading = "lazy";
+    heroImage.hidden = true;
+    const heroName = document.createElement("span");
+    heroName.className = "match-history-hero";
+    heroName.textContent = formatMatchValue(match.hero_id);
+    const heroLevel = document.createElement("span");
+    heroLevel.className = "match-history-hero-level";
+    heroLevel.textContent = `Level ${formatMatchValue(match.hero_level)}`;
+    const heroInfo = document.createElement("span");
+    heroInfo.className = "match-history-hero-info";
+    heroInfo.append(heroName, heroLevel);
+    if (match.hero_id !== null && match.hero_id !== undefined && match.hero_id !== "") {
+        heroName.dataset.heroId = String(match.hero_id);
+        heroImage.dataset.heroId = String(match.hero_id);
+    }
+    details.append(heroImage, heroInfo);
+
+    const matchMeta = document.createElement("div");
+    matchMeta.className = "match-history-meta";
+    const outcome = window.DeadlockMatchTrends.getMatchOutcome(match);
+    if (outcome) {
+        const result = document.createElement("span");
+        result.className = `match-result-badge is-${outcome}`;
+        result.textContent = { win: "Victory", loss: "Defeat" }[outcome];
+        matchMeta.append(result);
+    }
+    const playedAt = document.createElement("time");
+    const startTime = Number(match.start_time);
+    const playedDate = Number.isFinite(startTime)
+        ? new Date(startTime < 1e12 ? startTime * 1000 : startTime)
+        : null;
+    if (playedDate && Number.isFinite(playedDate.getTime())) {
+        playedAt.dateTime = playedDate.toISOString();
+        playedAt.textContent = new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeStyle: "short" }).format(playedDate);
+    } else {
+        playedAt.textContent = "Date unavailable";
+    }
+    matchMeta.append(playedAt);
+    titleGroup.append(details);
+    heading.append(titleGroup, matchMeta);
+
+    const trendNotes = { better: "Better than previous", worse: "Worse than previous", same: "Same as previous" };
+    const kdNote = entry.kd
+        ? trendNotes[entry.kd.state]
+        : entry.hasPreviousMatch ? "Trend unavailable" : "No previous match";
+    const stats = document.createElement("div");
+    stats.className = "match-history-stat-grid";
+    stats.append(
+        createMatchStatCard("K/D ratio", formatMatchValue(entry.kdRatio), kdNote, entry.kd?.state ?? null),
+        createMatchStatCard("Game duration", window.DeadlockMatchTrends.formatMatchDuration(match.match_duration_s), "Total playtime")
+    );
+
+    item.append(heading, stats);
+    return item;
+}
+
+function renderMatchHistory(matches) {
+    const history = window.DeadlockMatchTrends.compareHistory(matches);
+    const renderVersion = ++matchHistoryRenderVersion;
+    matchHistoryList.replaceChildren(...history.map(createMatchHistoryItem));
+    matchHistoryStatus.textContent = history.length
+        ? `Showing ${history.length} matches, newest first. Each arrow compares the match with the one played before it.`
+        : "No matches are available for this player.";
+    matchHistoryButton.textContent = `View match history (${history.length})`;
+    matchHistoryButton.disabled = false;
+
+    const heroIds = [...new Set(history
+        .map(entry => entry.match.hero_id)
+        .filter(heroId => heroId !== null && heroId !== undefined && heroId !== ""))];
+    Promise.all(heroIds.map(async heroId => [String(heroId), await fetchMatchHeroDetails(heroId)]))
+        .then(heroDetails => {
+            if (renderVersion !== matchHistoryRenderVersion) return;
+            const detailsById = new Map(heroDetails);
+            matchHistoryList.querySelectorAll(".match-history-hero[data-hero-id]").forEach(element => {
+                const name = detailsById.get(element.dataset.heroId)?.name;
+                if (name) element.textContent = name;
+            });
+            matchHistoryList.querySelectorAll(".match-history-hero-image[data-hero-id]").forEach(element => {
+                const hero = detailsById.get(element.dataset.heroId);
+                if (!hero?.image) return;
+
+                try {
+                    const imageUrl = new URL(hero.image);
+                    if (imageUrl.protocol !== "https:") return;
+                    element.src = imageUrl.href;
+                    element.alt = hero.name ? `${hero.name} portrait` : "Hero portrait";
+                    element.hidden = false;
+                    element.onerror = () => element.remove();
+                } catch {
+                    // Keep the hero name visible if the API did not provide a valid image URL.
+                }
+            });
+        });
+}
+
+
 
 function getPatchnoteSummary(content) {
     if (typeof content !== "string") return "Read the full patch notes for details.";
@@ -325,6 +540,15 @@ searchForm.addEventListener("submit", async event => {
 
         const records = await fetchJson(`/api/user/${encodeURIComponent(player.account_id)}/hero-stats`);
         renderStats(Array.isArray(records) ? records : []);
+        try {
+            const matches = await fetchJson(`/api/user/${encodeURIComponent(player.account_id)}/matches`);
+            renderMatchTrends(matches);
+            renderMatchHistory(matches);
+        } catch {
+            showTrendMessage("Match history is unavailable");
+            matchHistoryButton.textContent = "Match history unavailable";
+            matchHistoryStatus.textContent = "Match history could not be loaded. Please try searching again later.";
+        }
         showStatus("Player stats loaded successfully.", "success");
     } catch (error) {
         const message = error.message === "User Not Found"
@@ -345,4 +569,14 @@ favoriteButton.addEventListener("click", () => {
     const isFavorite = favoriteButton.getAttribute("aria-pressed") === "true";
     localStorage.setItem(`deadlock-favorite-${accountId}`, String(!isFavorite));
     updateFavoriteButton(accountId);
+});
+
+matchHistoryButton.addEventListener("click", () => {
+    if (!matchHistoryButton.disabled) matchHistoryDialog.showModal();
+});
+
+matchHistoryClose.addEventListener("click", () => matchHistoryDialog.close());
+
+matchHistoryDialog.addEventListener("click", event => {
+    if (event.target === matchHistoryDialog) matchHistoryDialog.close();
 });

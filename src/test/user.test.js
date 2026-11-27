@@ -169,6 +169,7 @@ test('GET /api/user/id/matches returns matches associated with id', async t => {
     expect(response.status).toBe(200);
     expect(Array.isArray(response.body)).toBe(true);
     expect(response.body[0].account_id).toBe(Number(id));
+    expect(response.body[0]).toHaveProperty('start_time');
 });
 
 test('GET /api/user/id/matches returns 404 for no matches found', async t => {
