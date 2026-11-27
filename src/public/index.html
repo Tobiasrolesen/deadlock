@@ -57,30 +57,6 @@
 
         <p class="status-message" id="status-message" role="status" aria-live="polite"></p>
 
-        <section class="capability-strip" aria-label="Available features">
-            <article class="capability-card"><span class="capability-number">01</span><div><h2>Player profiles</h2><p>Find players by name or Steam ID.</p></div></article>
-            <article class="capability-card"><span class="capability-number">02</span><div><h2>Personal performance</h2><p>Review tracked wins, K/D, and hero stats.</p></div></article>
-            <article class="capability-card"><span class="capability-number">03</span><div><h2>Game updates</h2><p>Read the latest Deadlock patch notes.</p></div></article>
-        </section>
-
-        <section class="popular-heroes-section" id="popular-heroes" aria-labelledby="popular-heroes-title">
-            <header class="section-heading">
-                <div><p class="eyebrow">GLOBAL TRENDS</p><h2 id="popular-heroes-title">Most played heroes</h2></div>
-                <p class="section-description">Popular picks in normal matches, ranked by matches played. Popularity is not a win-rate ranking.</p>
-            </header>
-            <p class="hero-scoreboard-status" id="hero-scoreboard-status" role="status" aria-live="polite">Loading global hero stats…</p>
-            <div class="popular-hero-grid" id="hero-scoreboard" aria-label="Most played heroes"></div>
-        </section>
-
-        <section class="updates-section" id="updates" aria-labelledby="updates-title">
-            <header class="section-heading">
-                <div><p class="eyebrow">STAY IN THE KNOW</p><h2 id="updates-title">What’s new in Deadlock</h2></div>
-                <p class="section-description">Recent updates from the Deadlock API.</p>
-            </header>
-            <p class="patchnotes-status" id="patchnotes-status" role="status" aria-live="polite">Loading the latest updates…</p>
-            <div class="update-grid" id="patchnote-list"></div>
-        </section>
-
         <section class="player-section" id="player-stats" aria-labelledby="player-section-title">
             <header class="section-heading player-section-heading">
                 <div><p class="eyebrow">YOUR SELECTED PLAYER PROFILE</p><h2 id="player-section-title">A player's personal performance</h2></div>
@@ -121,11 +97,11 @@
                         <span id="win-rate-bar"></span>
                     </div>
                 </article>
-                <article class="stat-card">
-                    <p class="stat-label">K/D RATIO</p>
-                    <p class="stat-value" id="kd-ratio">—</p>
-                    <p class="stat-caption">kills per death</p>
-                    <div class="progress-track" aria-hidden="true"><span id="kd-bar"></span></div>
+                <article class="stat-card kda-stat-card">
+                    <p class="stat-label">KDA RATIO</p>
+                    <p class="stat-value" id="kda-ratio">—</p>
+                    <p class="stat-caption">The average K/D/A pr. match</p>
+                    <p class="kda-average" id="average-kda">—</p>
                 </article>
                 <article class="stat-card">
                     <p class="stat-label">MATCHES PLAYED</p>
@@ -224,6 +200,25 @@
                 </aside>
             </div>
         </section>
+
+        <section class="popular-heroes-section" id="popular-heroes" aria-labelledby="popular-heroes-title">
+            <header class="section-heading">
+                <div><p class="eyebrow">GLOBAL TRENDS</p><h2 id="popular-heroes-title">Most played heroes</h2></div>
+                <p class="section-description">Popular picks in normal matches, ranked by matches played. Popularity is not a win-rate ranking.</p>
+            </header>
+            <p class="hero-scoreboard-status" id="hero-scoreboard-status" role="status" aria-live="polite">Loading global hero stats…</p>
+            <div class="popular-hero-grid" id="hero-scoreboard" aria-label="Most played heroes"></div>
+        </section>
+
+        <section class="updates-section" id="updates" aria-labelledby="updates-title">
+            <header class="section-heading">
+                <div><p class="eyebrow">STAY IN THE KNOW</p><h2 id="updates-title">What’s new in Deadlock</h2></div>
+                <p class="section-description">Recent updates from the Deadlock API.</p>
+            </header>
+            <p class="patchnotes-status" id="patchnotes-status" role="status" aria-live="polite">Loading the latest updates…</p>
+            <div class="update-grid" id="patchnote-list"></div>
+        </section>
+
         <dialog class="match-history-dialog" id="match-history-dialog" aria-labelledby="match-history-title">
             <div class="match-history-dialog-content">
                 <header class="match-history-dialog-heading">

@@ -52,13 +52,13 @@ function updateFavoriteButton(accountId) {
 
 function resetStats() {
     [
-        "#win-rate", "#kd-ratio", "#matches-played", "#damage-per-minute",
+        "#win-rate", "#kda-ratio", "#average-kda", "#matches-played", "#damage-per-minute",
         "#total-wins", "#total-kills", "#total-deaths", "#total-assists",
         "#hero-count", "#hero-record-count",
     ].forEach(selector => {
         document.querySelector(selector).textContent = "—";
     });
-    ["#win-rate-bar", "#kd-bar", "#damage-bar"].forEach(selector => setProgress(selector, 0));
+    ["#win-rate-bar", "#damage-bar"].forEach(selector => setProgress(selector, 0));
 }
 
 function renderPlayer(player) {
@@ -124,11 +124,17 @@ function renderStats(records) {
     }, { matches: 0, wins: 0, kills: 0, deaths: 0, assists: 0 });
 
     const winRate = totals.matches > 0 ? (totals.wins / totals.matches) * 100 : 0;
-    const kdRatio = totals.deaths > 0 ? totals.kills / totals.deaths : totals.kills;
+    const kdaRatio = totals.matches > 0
+        ? formatNumber(totals.deaths > 0 ? (totals.kills + totals.assists) / totals.deaths : totals.kills + totals.assists)
+        : "—";
+    const averageKda = totals.matches > 0
+        ? [totals.kills, totals.deaths, totals.assists].map(value => formatNumber(value / totals.matches)).join(" / ")
+        : "—";
     const damagePerMinute = weightedAverage(records, "damage_per_min");
 
     document.querySelector("#win-rate").textContent = `${formatNumber(winRate)}%`;
-    document.querySelector("#kd-ratio").textContent = formatNumber(kdRatio);
+    document.querySelector("#kda-ratio").textContent = kdaRatio;
+    document.querySelector("#average-kda").textContent = averageKda;
     document.querySelector("#matches-played").textContent = formatNumber(totals.matches);
     document.querySelector("#damage-per-minute").textContent = damagePerMinute === null ? "—" : formatNumber(damagePerMinute);
     document.querySelector("#total-wins").textContent = formatNumber(totals.wins);
@@ -139,7 +145,6 @@ function renderStats(records) {
     document.querySelector("#hero-record-count").textContent = formatNumber(records.length);
 
     setProgress("#win-rate-bar", winRate);
-    setProgress("#kd-bar", kdRatio, Math.max(kdRatio, 3));
     setProgress("#damage-bar", damagePerMinute || 0, Math.max(damagePerMinute || 0, 1000));
 }
 

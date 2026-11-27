@@ -14,6 +14,12 @@ test('GET / serves the overview page and its frontend assets', async () => {
     expect(page.text).toContain('id="updates"');
     expect(page.text).toContain('id="player-search"');
     expect(page.text).toContain('id="profile-content"');
+    expect(page.text.indexOf('id="profile-content"')).toBeLessThan(page.text.indexOf('id="popular-heroes"'));
+    expect(page.text.indexOf('id="profile-content"')).toBeLessThan(page.text.indexOf('id="updates"'));
+    expect(page.text).toContain('id="kda-ratio"');
+    expect(page.text).toContain('id="average-kda"');
+    expect(page.text).toContain('class="stat-card kda-stat-card"');
+    expect(page.text).toContain('The average K/D/A pr. match');
     expect(page.text).toContain('id="trend-kd"');
     expect(page.text).toContain('id="trend-kda"');
     expect(page.text).toContain('id="trend-deaths"');
@@ -68,6 +74,45 @@ test('player stat renderers only target elements present in the page', () => {
     const selectors = [...source.matchAll(/"#([\w-]+)"/g)].map(([, id]) => id);
 
     selectors.forEach(id => expect(html).toContain(`id="${id}"`));
+});
+
+test('profile overview displays KDA ratio and average K/D/A per match', () => {
+    const source = readFileSync(new URL('../public/public.js', import.meta.url), 'utf8');
+    const elements = new Map();
+    const createElement = () => ({
+        textContent: '',
+        className: '',
+        style: {},
+        dataset: {},
+        addEventListener() {},
+        closest() { return null; },
+        querySelector() { return createElement(); },
+        setAttribute() {},
+    });
+    const document = {
+        querySelector(selector) {
+            if (!elements.has(selector)) elements.set(selector, createElement());
+            return elements.get(selector);
+        },
+    };
+    const context = {
+        document,
+        fetch: async () => { throw new Error('API unavailable'); },
+        localStorage: { getItem() { return null; } },
+    };
+    runInNewContext(source, context);
+
+    context.renderStats([
+        { matches_played: 2, kills: 12, deaths: 4, assists: 10 },
+        { matches_played: 1, kills: 3, deaths: 5, assists: 2 },
+    ]);
+
+    expect(elements.get('#kda-ratio').textContent).toBe('3');
+    expect(elements.get('#average-kda').textContent).toBe('5 / 3 / 4');
+
+    context.renderStats([{ matches_played: 1, kills: 5, deaths: 0, assists: 3 }]);
+    expect(elements.get('#kda-ratio').textContent).toBe('8');
+    expect(elements.get('#average-kda').textContent).toBe('5 / 0 / 3');
 });
 
 test('index uses semantic elements for content headings and the player profile', () => {
