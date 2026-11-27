@@ -16,6 +16,7 @@ const matchHistoryClose = document.querySelector("#match-history-close");
 const matchHistoryStatus = document.querySelector("#match-history-status");
 const matchHistoryList = document.querySelector("#match-history-list");
 const matchHeroDetailsCache = new Map();
+let matchTrendRenderVersion = 0;
 let matchHistoryRenderVersion = 0;
 
 const formatNumber = value => new Intl.NumberFormat("en-US", {
@@ -154,14 +155,25 @@ async function fetchJson(url) {
 }
 
 function showTrendMessage(message) {
+    matchTrendRenderVersion += 1;
     ["#trend-kd", "#trend-deaths"].forEach(selector => {
         const element = document.querySelector(selector);
         element.className = "trend-indicator";
-        element.textContent = message;
+        element.textContent = "—";
     });
+    [
+        "#trend-kd-current", "#trend-kd-previous", "#trend-kda", "#trend-kda-previous",
+        "#trend-deaths-current", "#trend-deaths-previous",
+    ].forEach(selector => {
+        document.querySelector(selector).textContent = "—";
+    });
+    document.querySelector("#trend-result").className = "trend-result-badge";
+    document.querySelector("#trend-result").textContent = "Result unavailable";
+    document.querySelector("#trend-hero").textContent = "Latest hero unavailable.";
+    document.querySelector("#trend-status").textContent = message;
 }
 
-function renderTrend(element, trend, metricName) {
+function renderTrend(element, trend, metricName, currentElement, previousElement) {
     const labels = {
         better: "Better",
         worse: "Worse",
@@ -175,7 +187,9 @@ function renderTrend(element, trend, metricName) {
     };
 
     element.className = `trend-indicator is-${trend.state}`;
-    element.textContent = `${arrows[trend.state]} ${labels[trend.state]} (${formatNumber(trend.current)} vs ${formatNumber(trend.previous)})`;
+    element.textContent = `${arrows[trend.state]} ${labels[trend.state]}`;
+    currentElement.textContent = formatNumber(trend.current);
+    previousElement.textContent = formatNumber(trend.previous);
     element.setAttribute("aria-label", `${metricName}: ${labels[trend.state]}, latest match ${formatNumber(trend.current)} compared with previous match ${formatNumber(trend.previous)}`);
 }
 
@@ -186,14 +200,54 @@ function renderMatchTrends(matches) {
         return;
     }
 
-    renderTrend(document.querySelector("#trend-kd"), comparison.kd, "K/D ratio");
-    renderTrend(document.querySelector("#trend-deaths"), comparison.deaths, "Deaths");
+    const renderVersion = ++matchTrendRenderVersion;
+    document.querySelector("#trend-status").textContent = "";
+    renderTrend(
+        document.querySelector("#trend-kd"),
+        comparison.kd,
+        "K/D ratio",
+        document.querySelector("#trend-kd-current"),
+        document.querySelector("#trend-kd-previous"),
+    );
+    renderTrend(
+        document.querySelector("#trend-deaths"),
+        comparison.deaths,
+        "Deaths",
+        document.querySelector("#trend-deaths-current"),
+        document.querySelector("#trend-deaths-previous"),
+    );
+    document.querySelector("#trend-kda").textContent = formatKda(comparison.match);
+    document.querySelector("#trend-kda-previous").textContent = formatKda(comparison.previousMatch);
+
+    const result = document.querySelector("#trend-result");
+    const outcome = window.DeadlockMatchTrends.getMatchOutcome(comparison.match);
+    result.className = `trend-result-badge${outcome ? ` is-${outcome}` : ""}`;
+    result.textContent = outcome === "win" ? "Victory" : outcome === "loss" ? "Defeat" : "Result unavailable";
+
+    const hero = document.querySelector("#trend-hero");
+    const heroId = comparison.match.hero_id;
+    hero.textContent = heroId !== null && heroId !== undefined && heroId !== ""
+        ? `Hero ${formatMatchValue(heroId)}`
+        : "Hero unavailable.";
+    if (heroId !== null && heroId !== undefined && heroId !== "") {
+        fetchMatchHeroDetails(heroId).then(details => {
+            if (renderVersion !== matchTrendRenderVersion || !details.name) return;
+            hero.textContent = details.name;
+        });
+    }
 }
 
 function formatMatchValue(value) {
     return value !== null && value !== undefined && value !== "" && Number.isFinite(Number(value))
         ? formatNumber(Number(value))
         : "—";
+}
+
+function formatKda(match) {
+    if (!match) return "—";
+
+    const values = [match.player_kills, match.player_deaths, match.player_assists].map(formatMatchValue);
+    return values.every(value => value === "—") ? "—" : values.join(" / ");
 }
 
 function createMatchStatCard(label, value, note, state = null) {
@@ -312,6 +366,7 @@ function createMatchHistoryItem(entry) {
     stats.className = "match-history-stat-grid";
     stats.append(
         createMatchStatCard("K/D ratio", formatMatchValue(entry.kdRatio), kdNote, entry.kd?.state ?? null),
+        createMatchStatCard("K/D/A", `${formatMatchValue(match.player_kills)} / ${formatMatchValue(match.player_deaths)} / ${formatMatchValue(match.player_assists)}`, "Kills / Deaths / Assists"),
         createMatchStatCard("Game duration", window.DeadlockMatchTrends.formatMatchDuration(match.match_duration_s), "Total playtime")
     );
 

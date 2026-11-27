@@ -423,6 +423,10 @@ a {
     gap: 20px;
 }
 
+.trend-panel {
+    margin-bottom: 20px;
+}
+
 .panel {
     padding: 22px;
 }
@@ -670,7 +674,7 @@ a {
     }
 
     .stat-label {
-        font-size: 9px;
+        font-size: 10px;
     }
 
     .stat-value {
@@ -1157,6 +1161,132 @@ a {
     font-weight: 700;
 }
 
+.trend-match-context {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin: -2px 0 12px;
+}
+
+.trend-result-badge {
+    padding: 5px 9px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    color: var(--muted);
+    background: var(--surface-raised);
+    font-size: 15px;
+    font-weight: 750;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.trend-result-badge.is-win {
+    border-color: rgba(112, 212, 147, 0.35);
+    color: #70d493;
+    background: rgba(112, 212, 147, 0.08);
+}
+
+.trend-result-badge.is-loss {
+    border-color: rgba(255, 119, 119, 0.35);
+    color: #ff7777;
+    background: rgba(255, 119, 119, 0.08);
+}
+
+.trend-hero {
+    overflow: hidden;
+    color: var(--muted);
+    font-size: 15px;
+    font-weight: bold;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.trend-status {
+    margin: 0 0 12px;
+    color: var(--muted);
+    font-size: 10px;
+}
+
+.trend-status:empty {
+    display: none;
+}
+
+.trend-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.trend-stat-card {
+    min-width: 0;
+    padding: 13px;
+    border: 1px solid rgba(112, 212, 147, 0.11);
+    border-radius: 10px;
+    background: linear-gradient(145deg, #10271b, #0b1b13);
+}
+
+.trend-stat-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    min-height: 18px;
+}
+
+.trend-stat-heading h3 {
+    margin: 0;
+    color: #b4c4b8;
+    font-size: 15px;
+}
+
+.trend-stat-heading .trend-indicator {
+    max-width: none;
+    font-size: 15px;
+    white-space: nowrap;
+}
+
+.trend-stat-values {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: end;
+    gap: 7px;
+    margin-top: 15px;
+}
+
+.trend-stat-value {
+    display: grid;
+    min-width: 0;
+    gap: 4px;
+}
+
+.trend-stat-value:last-child {
+    text-align: right;
+}
+
+.trend-stat-value span {
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.trend-stat-value strong {
+    overflow: hidden;
+    font-size: clamp(17px, 2vw, 23px);
+    font-variant-numeric: tabular-nums;
+    line-height: 1.15;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.trend-stat-card:nth-child(2) .trend-stat-value strong {
+    font-size: clamp(12px, 1.5vw, 16px);
+}
+
+.trend-stat-versus {
+    padding-bottom: 3px;
+    color: #6f8878;
+    font-size: 15px;
+}
+
 .trend-indicator.is-better {
     color: #70d493;
 }
@@ -1365,7 +1495,7 @@ a {
 
 .match-history-stat-grid {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 9px;
     margin-top: 11px;
 }
@@ -1592,6 +1722,10 @@ a {
         align-items: stretch;
         flex-direction: column;
         gap: 12px;
+    }
+
+    .trend-stat-grid {
+        grid-template-columns: minmax(0, 1fr);
     }
 
     .history-button {

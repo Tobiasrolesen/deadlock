@@ -75,16 +75,17 @@ function compareHistory(matches) {
         const currentStats = getMatchStats(match);
 
         if (!hasPreviousMatch) {
-            return { match, matchNumber, hasPreviousMatch: false, kdRatio: currentStats?.kd ?? null, kd: null, deaths: null };
+            return { match, previousMatch: null, matchNumber, hasPreviousMatch: false, kdRatio: currentStats?.kd ?? null, kd: null, deaths: null };
         }
 
         const previousStats = getMatchStats(previousMatch);
         if (!currentStats || !previousStats) {
-            return { match, matchNumber, hasPreviousMatch: true, kdRatio: currentStats?.kd ?? null, kd: null, deaths: null };
+            return { match, previousMatch, matchNumber, hasPreviousMatch: true, kdRatio: currentStats?.kd ?? null, kd: null, deaths: null };
         }
 
         return {
             match,
+            previousMatch,
             matchNumber,
             hasPreviousMatch: true,
             kdRatio: currentStats.kd,
