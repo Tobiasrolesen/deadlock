@@ -2,8 +2,14 @@ import * as userRepository from "../repository/userRepository.js";
 
 import { fetchHero } from '../repository/heroesRepository.js'
 
+//Midlertidig cache til spillerdata
+const userCache = new Map();
+const userNameCache = new Map();
+const heroStatsCache = new Map();
+const matchCache = new Map();
+
 async function useFetchHero(id){
-    const herolist = await userRepository.getHeroStatsByUserId(id);
+    const herolist = await getHeroStatsByUserId(id);
     if (!herolist || herolist.length === 0) {
         return [];
     }
@@ -21,16 +27,63 @@ async function useFetchHero(id){
     return heroesWNames;
 }
 
+//Kaldet gemmes i cachen med det samme (før await), så to søgninger på samme tid
+//deler samme kald. Findes spilleren ikke, eller fejler kaldet, fjernes det igen.
 export async function getUserById(id) {
-    return await userRepository.getUserById(id);
+    if (userCache.has(id)){
+        return userCache.get(id); //Kan være færdig data eller et kald der stadig er i gang
+    }
+    const request = userRepository.getUserById(id);
+    userCache.set(id, request);
+
+    try {
+        const user = await request;
+        if (!user){
+            userCache.delete(id);
+        }
+        return user
+    } catch (err) {
+        userCache.delete(id);
+        throw err;
+    }
 }
 
 export async function getUserByName(name){
-    return await userRepository.getUserByName(name);
+    if (userNameCache.has(name)){
+        return userNameCache.get(name);
+    }
+    const request = userRepository.getUserByName(name);
+    userNameCache.set(name, request);
+
+    try {
+        const user = await request;
+        if (!user){
+            userNameCache.delete(name);
+        }
+        return user
+    } catch (err) {
+        userNameCache.delete(name);
+        throw err;
+    }
 }
 
 export async function getHeroStatsByUserId(id){
-    return await userRepository.getHeroStatsByUserId(id)
+    if (heroStatsCache.has(id)){
+        return heroStatsCache.get(id);
+    }
+    const request = userRepository.getHeroStatsByUserId(id);
+    heroStatsCache.set(id, request);
+
+    try {
+        const heroStats = await request;
+        if (!heroStats){
+            heroStatsCache.delete(id);
+        }
+        return heroStats
+    } catch (err) {
+        heroStatsCache.delete(id);
+        throw err;
+    }
 }
 
 export async function getPlayedHeroes(id){
@@ -68,5 +121,20 @@ export function sortPlayedHeroes(herolist, sortBy = 'time_played'){
 }
 
 export async function getMatchHistoryByUserId(id){
-    return await userRepository.getMatchHistoryByUserId(id);
+    if (matchCache.has(id)){
+        return matchCache.get(id);
+    }
+    const request = userRepository.getMatchHistoryByUserId(id);
+    matchCache.set(id, request);
+
+    try {
+        const matches = await request;
+        if (!matches){
+            matchCache.delete(id);
+        }
+        return matches
+    } catch (err) {
+        matchCache.delete(id); //Repository kaster 503 ved fejl - den må ikke gemmes
+        throw err;
+    }
 }
