@@ -1,8 +1,7 @@
 import { test, expect } from 'vitest';
 import request from 'supertest';
 import app from '../app.js';
-import { sortPlayedHeroes, getUserById, getUserByName, getHeroStatsByUserId, getMatchHistoryByUserId } from '../services/userService.js';
-
+import { sortPlayedHeroes, getUserById, getUserByName, getHeroStatsByUserId, getMatchHistoryByUserId, isCacheExpired } from '../services/userService.js';
 test('GET /api/user/id returns correct id', async t => {
     const id = "76561198200356797"
     const response = await request(app).get(`/api/user/${id}`);
@@ -188,7 +187,7 @@ test('New search on the player uses saved data', async () => {
 });
 
 //Forskellige spillere gemmes hver for sig
-test('Diffrent players are saved diffrently', async () => {
+test('Different players are saved differently', async () => {
     const id1 = "76561198200356797"
     const id2 = "240091069"
     const user1 = await getUserById(id1);
@@ -241,6 +240,34 @@ test('Match history for the same player uses saved data', async () => {
     const second = await getMatchHistoryByUserId(id);
     expect(second).toBe(first);
 });
+
+test('Newly saved data is not expired', () => {
+    const now = Date.now();
+    expect(isCacheExpired(now, now)).toBe(false);
+});
+
+//Data der er under 5 minutter gammel er ikke udløbet
+test('Data saved 4 minutes ago is not expired', () => {
+    const now = Date.now();
+    const savedAt = now - 299000;
+    expect(isCacheExpired(savedAt, now)).toBe(false);
+});
+
+//Data der er præcis 5 minutter gammel er udløbet
+test('Data saved 5 minutes ago is expired', () => {
+    const now = Date.now();
+    const savedAt = now - 300000;
+    expect(isCacheExpired(savedAt, now)).toBe(true);
+});
+
+//Data der er over 5 minutter sekunder gammel er udløbet
+test('Data saved 6 minutes ago is expired', () => {
+    const now = Date.now();
+    const savedAt = now - 360000;
+    expect(isCacheExpired(savedAt, now)).toBe(true);
+});
+
+
 
 
 
