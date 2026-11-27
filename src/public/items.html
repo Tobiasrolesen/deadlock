@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Items — Afterhours Deadlock Tracker</title>
+    <link rel="stylesheet" href="/style.css">
+    <script src="/public.js" defer></script>
+</head>
+<body>
+<header class="site-header">
+    <a class="brand" href="/" aria-label="Afterhours Deadlock Tracker home">
+        <span class="brand-mark" aria-hidden="true">A</span>
+        <span class="brand-copy"><strong>AFTERHOURS</strong><small>DEADLOCK TRACKER</small></span>
+    </a>
+    <nav class="main-nav" aria-label="Main navigation">
+        <a class="nav-link" href="/">Overview</a>
+        <a class="nav-link is-active" href="/items.html" aria-current="page">Items</a>
+    </nav>
+</header>
+
+
+<main class="page-shell">
+    <section aria-labelledby="items-title">
+        <div class="section-heading">
+            <div><p class="eyebrow">ITEM CATALOG</p><h1 id="items-title">Deadlock items</h1></div>
+        </div>
+            <div class="page-hero-inner">
+                <p class="page-hero-description">Browse the catalog of items available in Deadlock.</p>
+                <label for="item-search">Search for an item:</label>
+                <input type="text" id="item-search" placeholder="Search for an item...">
+            </div>
+        <p id="itemsStatus" role="status" aria-live="polite">Loading items…</p>
+        <div id="itemList" class="item-grid"></div>
+    </section>
+</main>
+<dialog id="item-dialog" class="item-dialog" aria-labelledby="item-dialog-title">
+    <div class="item-dialog-inner">
+        <button id="item-dialog-close" class="item-dialog-close" type="button" aria-label="Close item details">×</button>
+        <div id="item-dialog-content"></div>
+    </div>
+</dialog>
+</body>
+</html>

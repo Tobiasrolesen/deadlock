@@ -1,7 +1,6 @@
 const searchForm = document.querySelector("#player-search");
 const searchInput = document.querySelector("#player-query");
-const searchButton = searchForm.querySelector("button[type='submit']");
-const statusMessage = document.querySelector("#status-message");
+const searchButton = searchForm?.querySelector("button[type='submit']");
 const profileContent = document.querySelector("#profile-content");
 const favoriteButton = document.querySelector("#favorite-button");
 const playerAvatar = document.querySelector("#player-avatar");
@@ -10,6 +9,12 @@ const patchnoteList = document.querySelector("#patchnote-list");
 const patchnotesStatus = document.querySelector("#patchnotes-status");
 const heroScoreboard = document.querySelector("#hero-scoreboard");
 const heroScoreboardStatus = document.querySelector("#hero-scoreboard-status");
+const itemList = document.querySelector("#itemList");
+const itemsStatus = document.querySelector("#itemsStatus");
+const itemDialog = document.querySelector("#item-dialog");
+const itemDialogContent = document.querySelector("#item-dialog-content");
+const itemDialogClose = document.querySelector("#item-dialog-close");
+const statusMessage = document.querySelector("#status-message");
 
 const formatNumber = value => new Intl.NumberFormat("en-US", {
     maximumFractionDigits: 1,
@@ -292,10 +297,154 @@ async function loadPatchnotes() {
     }
 }
 
-loadHeroScoreboard();
-loadPatchnotes();
+function createItemCard(item) {
+    const card = document.createElement("article");
+    card.className = "item-card";
 
-searchForm.addEventListener("submit", async event => {
+    const trigger = document.createElement("button");
+    trigger.className = "item-card-trigger";
+    trigger.type = "button";
+    trigger.setAttribute("aria-haspopup", "dialog");
+    trigger.setAttribute("aria-label", `Show details for ${item.name || "Unknown item"}`);
+
+    const name = document.createElement("span");
+    name.className = "item-card-name";
+    name.textContent = item.name || "Unknown item";
+
+    if (item.image) {
+        try {
+            const imageUrl = new URL(item.image);
+            if (imageUrl.protocol === "https:" || imageUrl.protocol === "http:") {
+                const image = document.createElement("img");
+                image.className = "item-card-image";
+                image.src = imageUrl.href;
+                image.alt = "";
+                image.loading = "lazy";
+                image.onerror = () => image.remove();
+                trigger.append(image);
+            }
+        } catch {
+            // Omit images with invalid URLs.
+        }
+    }
+
+    const description = document.createElement("span");
+    description.className = "item-card-description";
+    description.textContent = itemDescriptionToText(item.description);
+
+    trigger.append(name, description);
+    trigger.addEventListener("click", () => {
+        renderItemDetails(item);
+        itemDialog.showModal();
+    });
+    card.dataset.name = (item.name || "").toLowerCase();
+    card.dataset.type = item.type || "";
+    card.dataset.slot = item.slot || "";
+    card.append(trigger);
+    return card;
+}
+
+function formatItemHeroes(heroes) {
+    const values = Array.isArray(heroes)
+        ? heroes
+        : Array.isArray(heroes?.value)
+            ? heroes.value
+            : heroes == null
+                ? []
+                : [heroes];
+    return values.map(hero => {
+        if (typeof hero === "string" || typeof hero === "number") return String(hero);
+        if (hero && typeof hero === "object") return hero.name || hero.id || "";
+        return "";
+    }).filter(Boolean).join(", ") || "Not available";
+}
+
+function addItemDetail(details, label, value) {
+    const term = document.createElement("dt");
+    term.textContent = label;
+    const description = document.createElement("dd");
+    description.textContent = value == null || value === "" ? "Not available" : String(value);
+    details.append(term, description);
+}
+
+function renderItemDetails(item) {
+    const title = document.createElement("h2");
+    title.id = "item-dialog-title";
+    title.textContent = item.name || "Unknown item";
+
+    const summary = document.createElement("div");
+    summary.className = "item-dialog-summary";
+    let hasImage = false;
+
+    if (item.image) {
+        try {
+            const imageUrl = new URL(item.image);
+            if (imageUrl.protocol === "https:" || imageUrl.protocol === "http:") {
+                const image = document.createElement("img");
+                image.className = "item-dialog-image";
+                image.src = imageUrl.href;
+                image.alt = item.name || "Item";
+                image.onerror = () => {
+                    image.remove();
+                    summary.classList.add("item-dialog-summary-no-image");
+                };
+                summary.append(image);
+                hasImage = true;
+            }
+        } catch {
+            // Omit images with invalid URLs.
+        }
+    }
+    if (!hasImage) summary.classList.add("item-dialog-summary-no-image");
+
+    const description = document.createElement("p");
+    description.className = "item-dialog-description";
+    description.textContent = itemDescriptionToText(item.description) || "No description available.";
+    summary.append(description);
+
+    const details = document.createElement("dl");
+    details.className = "item-dialog-details";
+    addItemDetail(details, "Item ID", item.id);
+    addItemDetail(details, "Cost", item.cost == null ? null : formatNumber(item.cost));
+    addItemDetail(details, "Tier", item.tier);
+    addItemDetail(details, "Slot", item.slot);
+    addItemDetail(details, "Type", item.type);
+    addItemDetail(details, "Heroes", formatItemHeroes(item.heroes));
+    addItemDetail(details, "Purchasable", item.shopable ? "Yes" : "No");
+
+    itemDialogContent.replaceChildren(title, summary, details);
+}
+
+itemDialogClose?.addEventListener("click", () => itemDialog.close());
+itemDialog?.addEventListener("click", event => {
+    if (event.target === itemDialog) itemDialog.close();
+});
+
+if (itemList) loadItems();
+function fillSelect(select, values) {
+    const unique = [...new Set(values.filter(Boolean))].sort();
+    unique.forEach(value => {
+        const option = document.createElement("option");
+        option.value = value;
+        option.textContent = value;
+        select.append(option);
+    });
+}
+
+async function loadItems() {
+    try {
+        const items = await fetchJson("/api/deadlock/items/type/upgrade");
+        itemList.replaceChildren(...items.map(createItemCard));
+        itemsStatus.textContent = `${items.length} items`;
+    } catch {
+        itemsStatus.textContent = "Items couldn't load.";
+    }
+}
+
+if (heroScoreboard) loadHeroScoreboard();
+if (patchnoteList) loadPatchnotes();
+
+searchForm?.addEventListener("submit", async event => {
     event.preventDefault();
     const query = searchInput.value.trim();
     if (!query) return;
@@ -338,7 +487,9 @@ searchForm.addEventListener("submit", async event => {
     }
 });
 
-favoriteButton.addEventListener("click", () => {
+
+
+favoriteButton?.addEventListener("click", () => {
     const accountId = favoriteButton.dataset.accountId;
     if (!accountId) return;
 
@@ -346,3 +497,31 @@ favoriteButton.addEventListener("click", () => {
     localStorage.setItem(`deadlock-favorite-${accountId}`, String(!isFavorite));
     updateFavoriteButton(accountId);
 });
+
+function itemDescriptionToText(html) {
+    const doc = new DOMParser().parseFromString(html || "", "text/html");
+
+    doc.querySelectorAll("svg").forEach(svg => svg.remove());
+    doc.querySelectorAll("br").forEach(br => br.replaceWith("\n"));
+
+    return doc.body.textContent
+        .replace(/[ \t]+\n/g, "\n")
+        .replace(/\n{3,}/g, "\n\n")
+        .trim();
+}
+
+function filterItems() {
+    const term = document.querySelector("#item-search").value.trim().toLowerCase();
+
+    let visible = 0;
+    itemList.querySelectorAll(".item-card").forEach(card => {
+        const matchesName = card.dataset.name.includes(term);
+
+        card.hidden = !(matchesName);
+        if (!card.hidden) visible++;
+    });
+
+    itemsStatus.textContent = `${visible} items`;
+}
+
+document.querySelector("#item-search")?.addEventListener("input", filterItems);
