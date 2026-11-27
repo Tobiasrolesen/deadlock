@@ -8,6 +8,29 @@ const userNameCache = new Map();
 const heroStatsCache = new Map();
 const matchCache = new Map();
 
+async function getCachedValue(cache, key, fetchValue) {
+    if (cache.has(key)) {
+        return cache.get(key);
+    }
+
+    const pending = fetchValue();
+    cache.set(key, pending);
+    try {
+        const value = await pending;
+        if (value) {
+            cache.set(key, value);
+        } else {
+            cache.delete(key);
+        }
+        return value;
+    } catch (error) {
+        if (cache.get(key) === pending) {
+            cache.delete(key);
+        }
+        throw error;
+    }
+}
+
 async function useFetchHero(id){
     const herolist = await getHeroStatsByUserId(id);
     if (!herolist || herolist.length === 0) {
@@ -28,36 +51,15 @@ async function useFetchHero(id){
 }
 
 export async function getUserById(id) {
-    if (userCache.has(id)){
-        return userCache.get(id);
-    }
-    const user = await userRepository.getUserById(id);
-    if (user){
-        userCache.set(id, user);
-    }
-    return user
+    return getCachedValue(userCache, id, () => userRepository.getUserById(id));
 }
 
 export async function getUserByName(name){
-    if (userNameCache.has(name)){
-        return userNameCache.get(name);
-    }
-    const user = await userRepository.getUserByName(name)
-    if (user){
-        userNameCache.set(name, user);
-    }
-    return user
+    return getCachedValue(userNameCache, name, () => userRepository.getUserByName(name));
 }
 
 export async function getHeroStatsByUserId(id){
-    if (heroStatsCache.has(id)){
-        return heroStatsCache.get(id);
-    }
-    const heroStats = await userRepository.getHeroStatsByUserId(id);
-    if (heroStats){
-        heroStatsCache.set(id, heroStats);
-    }
-    return heroStats
+    return getCachedValue(heroStatsCache, id, () => userRepository.getHeroStatsByUserId(id));
 }
 
 export async function getPlayedHeroes(id){
@@ -95,12 +97,5 @@ export function sortPlayedHeroes(herolist, sortBy = 'time_played'){
 }
 
 export async function getMatchHistoryByUserId(id){
-    if (matchCache.has(id)){
-        return matchCache.get(id);
-    }
-    const matches = await userRepository.getMatchHistoryByUserId(id);
-    if (matches){
-        matchCache.set(id, matches);
-    }
-    return matches
+    return getCachedValue(matchCache, id, () => userRepository.getMatchHistoryByUserId(id));
 }
