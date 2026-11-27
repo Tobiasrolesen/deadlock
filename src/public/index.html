@@ -11,42 +11,36 @@
     <script src="/public.js" defer></script>
 </head>
 <body>
-<header class="site-header">
-    <a class="brand" href="#overview" aria-label="Afterhours Deadlock Tracker home">
-        <span class="brand-mark" aria-hidden="true">A</span>
-        <span class="brand-copy"><strong>AFTERHOURS</strong><small>DEADLOCK TRACKER</small></span>
-    </a>
-    <nav class="main-nav" aria-label="Main navigation">
-        <a class="nav-link is-active" href="#overview" aria-current="page">Overview</a>
-        <a class="nav-link" href="#popular-heroes">Hero trends</a>
-        <a class="nav-link" href="#player-stats">Player stats</a>
-        <a class="nav-link" href="#updates">Updates</a>
-    </nav>
-</header>
+    <header class="site-header">
+        <a class="brand" href="/" aria-label="Afterhours Deadlock Tracker home">
+            <span class="brand-mark" aria-hidden="true">A</span>
+            <span class="brand-copy"><strong>AFTERHOURS</strong><small>DEADLOCK TRACKER</small></span>
+        </a>
+        <nav class="main-nav" aria-label="Main navigation">
+            <a class="nav-link is-active" href="/" aria-current="page">Overview</a>
+            <a class="nav-link" href="#popular-heroes">Hero trends</a>
+            <a class="nav-link" href="#player-stats">Player stats</a>
+            <a class="nav-link" href="#updates">Updates</a>
+            <a class="nav-link" href="/map">Guides</a>
+        </nav>
+    </header>
 
-<main class="page-shell">
-    <section class="home-hero" id="overview" aria-labelledby="home-title">
-        <div class="hero-copy">
-            <p class="eyebrow">DEADLOCK TRACKER</p>
-            <h1 id="home-title">ANOTHER<br><span>EDGE.</span></h1>
-            <p class="hero-description">Track your stats and find what you need to win your next match.</p>
-            <form class="search-form home-search" id="player-search" role="search">
-                <label class="sr-only" for="player-query">Search by player name or Steam ID</label>
-                <svg aria-hidden="true" viewBox="0 0 24 24">
-                    <circle cx="10.8" cy="10.8" r="6.8"></circle>
-                    <path d="m16 16 4.5 4.5"></path>
-                </svg>
-                <input id="player-query" name="player" type="search" placeholder="Search player name or Steam ID" autocomplete="off" required>
-                <button type="submit">Find player <span aria-hidden="true">→</span></button>
-            </form>
-            <p class="search-prompt">Search by player name or Steam ID. Match lookup is not supported yet.</p>
-        </div>
-        <aside class="hero-showcase" aria-label="Available player insights">
-            <div class="showcase-topline"><span>PLAYER INSIGHTS</span><span class="live-dot">API DATA</span></div>
-            <div class="showcase-orbit" aria-hidden="true"><span></span><i></i><b></b></div>
-            <div class="showcase-feature">
-                <span class="showcase-icon" aria-hidden="true">✦</span>
-                <div><h2>Make every match count</h2><p>Look up a player to reveal their tracked performance.</p></div>
+    <main class="page-shell">
+        <section class="home-hero" id="overview" aria-labelledby="home-title">
+            <div class="hero-copy">
+                <p class="eyebrow">DEADLOCK TRACKER</p>
+                <h1 id="home-title">ANOTHER<br><span>EDGE.</span></h1>
+                <p class="hero-description">Track your stats and find what you need to win your next match.</p>
+                <form class="search-form home-search" id="player-search" role="search">
+                    <label class="sr-only" for="player-query">Search by player name or Steam ID</label>
+                    <svg aria-hidden="true" viewBox="0 0 24 24">
+                        <circle cx="10.8" cy="10.8" r="6.8"></circle>
+                        <path d="m16 16 4.5 4.5"></path>
+                    </svg>
+                    <input id="player-query" name="player" type="search" placeholder="Search player name or Steam ID" autocomplete="off" required>
+                    <button type="submit">Find player <span aria-hidden="true">→</span></button>
+                </form>
+                <p class="search-prompt">Search by player name or Steam ID. Match lookup is not supported yet.</p>
             </div>
             <div class="showcase-tags" aria-label="Available statistics">
                 <span>WIN RATE</span><span>K / D</span><span>HERO STATS</span>
@@ -56,126 +50,35 @@
 
     <p class="status-message" id="status-message" role="status" aria-live="polite"></p>
 
-    <section class="capability-strip" aria-label="Available features">
-        <article class="capability-card"><span class="capability-number">01</span><div><h2>Player profiles</h2><p>Find players by name or Steam ID.</p></div></article>
-        <article class="capability-card"><span class="capability-number">02</span><div><h2>Personal performance</h2><p>Review tracked wins, K/D, and hero stats.</p></div></article>
-        <article class="capability-card"><span class="capability-number">03</span><div><h2>Game updates</h2><p>Read the latest Deadlock patch notes.</p></div></article>
-    </section>
+        <section class="player-section" id="player-stats" aria-labelledby="player-section-title">
+            <header class="section-heading player-section-heading">
+                <div><p class="eyebrow">YOUR SELECTED PLAYER PROFILE</p><h2 id="player-section-title">A player's personal performance</h2></div>
+                <p class="section-description">Search above to load a player’s available statistics.</p>
+            </header>
+        </section>
 
-    <section class="popular-heroes-section" id="popular-heroes" aria-labelledby="popular-heroes-title">
-        <header class="section-heading">
-            <div><p class="eyebrow">GLOBAL TRENDS</p><h2 id="popular-heroes-title">Most played heroes</h2></div>
-            <p class="section-description">Popular picks in normal matches, ranked by matches played. Popularity is not a win-rate ranking.</p>
-        </header>
-        <p class="hero-scoreboard-status" id="hero-scoreboard-status" role="status" aria-live="polite">Loading global hero stats…</p>
-        <div class="popular-hero-grid" id="hero-scoreboard" aria-label="Most played heroes"></div>
-    </section>
-
-    <section class="updates-section" id="updates" aria-labelledby="updates-title">
-        <header class="section-heading">
-            <div><p class="eyebrow">STAY IN THE KNOW</p><h2 id="updates-title">What’s new in Deadlock</h2></div>
-            <p class="section-description">Recent updates from the Deadlock API.</p>
-        </header>
-        <p class="patchnotes-status" id="patchnotes-status" role="status" aria-live="polite">Loading the latest updates…</p>
-        <div class="update-grid" id="patchnote-list"></div>
-    </section>
-
-    <section class="player-section" id="player-stats" aria-labelledby="player-section-title">
-        <header class="section-heading player-section-heading">
-            <div><p class="eyebrow">YOUR SELECTED PLAYER PROFILE</p><h2 id="player-section-title">A player's personal performance</h2></div>
-            <p class="section-description">Search above to load a player’s available statistics.</p>
-        </header>
-    </section>
-
-    <section id="profile-content" aria-labelledby="page-title" hidden>
-        <section class="profile-banner" id="player-profile" aria-labelledby="page-title">
-            <header class="banner-copy">
-                <p class="eyebrow">PLAYER PROFILE</p>
-                <div class="player-heading">
-                    <div class="avatar-shell" id="avatar-shell" aria-hidden="true">
-                        <img id="player-avatar" alt="" hidden>
-                        <span id="avatar-fallback">DL</span>
-                    </div>
-                    <div class="player-details">
-                        <h1 id="page-title">Find a player profile</h1>
-                        <p class="steam-id" id="steam-id">Search by player name or Steam ID to get started.</p>
-                        <div class="profile-meta">
-                            <span class="profile-badge">Player stats</span>
-                            <span id="profile-updated">Powered by Deadlock API data</span>
+        <section id="profile-content" aria-labelledby="page-title" hidden>
+            <section class="profile-banner" id="player-profile" aria-labelledby="page-title">
+                <header class="banner-copy">
+                    <p class="eyebrow">PLAYER PROFILE</p>
+                    <div class="player-heading">
+                        <div class="avatar-shell" id="avatar-shell" aria-hidden="true">
+                            <img id="player-avatar" alt="" hidden>
+                            <span id="avatar-fallback">DL</span>
+                        </div>
+                        <div class="player-details">
+                            <h1 id="page-title">Find a player profile</h1>
+                            <p class="steam-id" id="steam-id">Search by player name or Steam ID to get started.</p>
+                            <div class="profile-meta">
+                                <span class="profile-badge">Player stats</span>
+                                <span id="profile-updated">Powered by Deadlock API data</span>
+                            </div>
                         </div>
                     </div>
-                </div>
-            </header>
-            <button class="favorite-button" id="favorite-button" type="button" aria-pressed="false" hidden>
-                <span aria-hidden="true">☆</span> Add to favorites
-            </button>
-        </section>
-
-        <section class="stat-grid" aria-label="Player overview statistics">
-            <article class="stat-card">
-                <p class="stat-label">WIN RATE</p>
-                <p class="stat-value" id="win-rate">—</p>
-                <p class="stat-caption">of tracked matches won</p>
-                <div class="progress-track" role="progressbar" aria-label="Win rate" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-                    <span id="win-rate-bar"></span>
-                </div>
-            </article>
-            <article class="stat-card">
-                <p class="stat-label">K/D RATIO</p>
-                <p class="stat-value" id="kd-ratio">—</p>
-                <p class="stat-caption">kills per death</p>
-                <div class="progress-track" aria-hidden="true"><span id="kd-bar"></span></div>
-            </article>
-            <article class="stat-card">
-                <p class="stat-label">MATCHES PLAYED</p>
-                <p class="stat-value" id="matches-played">—</p>
-                <p class="stat-caption">across tracked hero stats</p>
-                <span class="stat-chip" id="hero-count">— tracked heroes</span>
-            </article>
-            <article class="stat-card">
-                <p class="stat-label">AVG. DAMAGE / MIN</p>
-                <p class="stat-value" id="damage-per-minute">—</p>
-                <p class="stat-caption">weighted by matches played</p>
-                <div class="progress-track" aria-hidden="true"><span id="damage-bar"></span></div>
-            </article>
-        </section>
-
-        <section class="panel trend-panel" aria-labelledby="trend-title">
-            <header class="panel-heading">
-                <div>
-                    <h2 id="trend-title">Match-to-match trend</h2>
-                    <p>Latest match compared with the previous match.</p>
-                </div>
-                <button class="history-button" id="match-history-button" type="button" aria-haspopup="dialog" aria-controls="match-history-dialog" disabled>Loading match history…</button>
-            </header>
-            <dl class="details-list">
-                <div class="details-row">
-                    <dt>K/D ratio</dt>
-                    <dd id="trend-kd" class="trend-indicator">—</dd>
-                </div>
-                <div class="details-row">
-                    <dt>Deaths</dt>
-                    <dd id="trend-deaths" class="trend-indicator">—</dd>
-                </div>
-            </dl>
-        </section>
-
-        <div class="content-grid">
-            <section class="panel" id="hero-stats" aria-labelledby="hero-stats-title">
-                <header class="panel-heading">
-                    <div>
-                        <h2 id="hero-stats-title">Career overview</h2>
-                        <p>Combined results from the available hero statistics.</p>
-                    </div>
-                    <span class="panel-tag">PLAYER STATS</span>
                 </header>
-                <dl class="details-list">
-                    <div class="details-row"><dt>Total wins</dt><dd id="total-wins">—</dd></div>
-                    <div class="details-row"><dt>Total kills</dt><dd id="total-kills">—</dd></div>
-                    <div class="details-row"><dt>Total deaths</dt><dd id="total-deaths">—</dd></div>
-                    <div class="details-row"><dt>Total assists</dt><dd id="total-assists">—</dd></div>
-                </dl>
-                <p class="panel-footer">Stats are calculated from the player’s tracked hero records.</p>
+                <button class="favorite-button" id="favorite-button" type="button" aria-pressed="false" hidden>
+                    <span aria-hidden="true">☆</span> Add to favorites
+                </button>
             </section>
 
             <aside class="panel side-panel" aria-labelledby="hero-pool-title">

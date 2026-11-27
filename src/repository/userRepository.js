@@ -83,6 +83,7 @@ export async function getMatchHistoryByUserId(user_id){
         return data.map(data => ({
             account_id: data.account_id,
             match_id: data.match_id,
+            start_time: data.start_time,
             hero_id: data.hero_id,
             start_time: data.start_time,
             hero_level: data.hero_level,

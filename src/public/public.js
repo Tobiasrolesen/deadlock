@@ -10,6 +10,14 @@ const patchnoteList = document.querySelector("#patchnote-list");
 const patchnotesStatus = document.querySelector("#patchnotes-status");
 const heroScoreboard = document.querySelector("#hero-scoreboard");
 const heroScoreboardStatus = document.querySelector("#hero-scoreboard-status");
+const matchHistoryButton = document.querySelector("#match-history-button");
+const matchHistoryDialog = document.querySelector("#match-history-dialog");
+const matchHistoryClose = document.querySelector("#match-history-close");
+const matchHistoryStatus = document.querySelector("#match-history-status");
+const matchHistoryList = document.querySelector("#match-history-list");
+const matchHeroDetailsCache = new Map();
+let matchTrendRenderVersion = 0;
+let matchHistoryRenderVersion = 0;
 
 const matchHistoryButton = document.querySelector("#match-history-button");
 const matchHistoryDialog = document.querySelector("#match-history-dialog");
@@ -75,13 +83,13 @@ function updateFavoriteButton(accountId) {
 
 function resetStats() {
     [
-        "#win-rate", "#kd-ratio", "#matches-played", "#damage-per-minute",
+        "#win-rate", "#kda-ratio", "#average-kda", "#matches-played", "#damage-per-minute",
         "#total-wins", "#total-kills", "#total-deaths", "#total-assists",
         "#hero-count", "#hero-record-count",
     ].forEach(selector => {
         document.querySelector(selector).textContent = "—";
     });
-    ["#win-rate-bar", "#kd-bar", "#damage-bar"].forEach(selector => setProgress(selector, 0));
+    ["#win-rate-bar", "#damage-bar"].forEach(selector => setProgress(selector, 0));
 }
 
 function renderPlayer(player) {
@@ -156,11 +164,17 @@ function renderStats(records) {
     }, { matches: 0, wins: 0, kills: 0, deaths: 0, assists: 0 });
 
     const winRate = totals.matches > 0 ? (totals.wins / totals.matches) * 100 : 0;
-    const kdRatio = totals.deaths > 0 ? totals.kills / totals.deaths : totals.kills;
+    const kdaRatio = totals.matches > 0
+        ? formatNumber(totals.deaths > 0 ? (totals.kills + totals.assists) / totals.deaths : totals.kills + totals.assists)
+        : "—";
+    const averageKda = totals.matches > 0
+        ? [totals.kills, totals.deaths, totals.assists].map(value => formatNumber(value / totals.matches)).join(" / ")
+        : "—";
     const damagePerMinute = weightedAverage(records, "damage_per_min");
 
     document.querySelector("#win-rate").textContent = `${formatNumber(winRate)}%`;
-    document.querySelector("#kd-ratio").textContent = formatNumber(kdRatio);
+    document.querySelector("#kda-ratio").textContent = kdaRatio;
+    document.querySelector("#average-kda").textContent = averageKda;
     document.querySelector("#matches-played").textContent = formatNumber(totals.matches);
     document.querySelector("#damage-per-minute").textContent = damagePerMinute === null ? "—" : formatNumber(damagePerMinute);
     document.querySelector("#total-wins").textContent = formatNumber(totals.wins);
@@ -171,7 +185,6 @@ function renderStats(records) {
     document.querySelector("#hero-record-count").textContent = formatNumber(records.length);
 
     setProgress("#win-rate-bar", winRate);
-    setProgress("#kd-bar", kdRatio, Math.max(kdRatio, 3));
     setProgress("#damage-bar", damagePerMinute || 0, Math.max(damagePerMinute || 0, 1000));
 }
 
@@ -187,14 +200,25 @@ async function fetchJson(url) {
 }
 
 function showTrendMessage(message) {
+    matchTrendRenderVersion += 1;
     ["#trend-kd", "#trend-deaths"].forEach(selector => {
         const element = document.querySelector(selector);
         element.className = "trend-indicator";
-        element.textContent = message;
+        element.textContent = "—";
     });
+    [
+        "#trend-kd-current", "#trend-kd-previous", "#trend-kda", "#trend-kda-previous",
+        "#trend-deaths-current", "#trend-deaths-previous",
+    ].forEach(selector => {
+        document.querySelector(selector).textContent = "—";
+    });
+    document.querySelector("#trend-result").className = "trend-result-badge";
+    document.querySelector("#trend-result").textContent = "Result unavailable";
+    document.querySelector("#trend-hero").textContent = "Latest hero unavailable.";
+    document.querySelector("#trend-status").textContent = message;
 }
 
-function renderTrend(element, trend, metricName) {
+function renderTrend(element, trend, metricName, currentElement, previousElement) {
     const labels = {
         better: "Better",
         worse: "Worse",
@@ -208,7 +232,9 @@ function renderTrend(element, trend, metricName) {
     };
 
     element.className = `trend-indicator is-${trend.state}`;
-    element.textContent = `${arrows[trend.state]} ${labels[trend.state]} (${formatNumber(trend.current)} vs ${formatNumber(trend.previous)})`;
+    element.textContent = `${arrows[trend.state]} ${labels[trend.state]}`;
+    currentElement.textContent = formatNumber(trend.current);
+    previousElement.textContent = formatNumber(trend.previous);
     element.setAttribute("aria-label", `${metricName}: ${labels[trend.state]}, latest match ${formatNumber(trend.current)} compared with previous match ${formatNumber(trend.previous)}`);
 }
 
@@ -219,14 +245,54 @@ function renderMatchTrends(matches) {
         return;
     }
 
-    renderTrend(document.querySelector("#trend-kd"), comparison.kd, "K/D ratio");
-    renderTrend(document.querySelector("#trend-deaths"), comparison.deaths, "Deaths");
+    const renderVersion = ++matchTrendRenderVersion;
+    document.querySelector("#trend-status").textContent = "";
+    renderTrend(
+        document.querySelector("#trend-kd"),
+        comparison.kd,
+        "K/D ratio",
+        document.querySelector("#trend-kd-current"),
+        document.querySelector("#trend-kd-previous"),
+    );
+    renderTrend(
+        document.querySelector("#trend-deaths"),
+        comparison.deaths,
+        "Deaths",
+        document.querySelector("#trend-deaths-current"),
+        document.querySelector("#trend-deaths-previous"),
+    );
+    document.querySelector("#trend-kda").textContent = formatKda(comparison.match);
+    document.querySelector("#trend-kda-previous").textContent = formatKda(comparison.previousMatch);
+
+    const result = document.querySelector("#trend-result");
+    const outcome = window.DeadlockMatchTrends.getMatchOutcome(comparison.match);
+    result.className = `trend-result-badge${outcome ? ` is-${outcome}` : ""}`;
+    result.textContent = outcome === "win" ? "Victory" : outcome === "loss" ? "Defeat" : "Result unavailable";
+
+    const hero = document.querySelector("#trend-hero");
+    const heroId = comparison.match.hero_id;
+    hero.textContent = heroId !== null && heroId !== undefined && heroId !== ""
+        ? `Hero ${formatMatchValue(heroId)}`
+        : "Hero unavailable.";
+    if (heroId !== null && heroId !== undefined && heroId !== "") {
+        fetchMatchHeroDetails(heroId).then(details => {
+            if (renderVersion !== matchTrendRenderVersion || !details.name) return;
+            hero.textContent = details.name;
+        });
+    }
 }
 
 function formatMatchValue(value) {
     return value !== null && value !== undefined && value !== "" && Number.isFinite(Number(value))
         ? formatNumber(Number(value))
         : "—";
+}
+
+function formatKda(match) {
+    if (!match) return "—";
+
+    const values = [match.player_kills, match.player_deaths, match.player_assists].map(formatMatchValue);
+    return values.every(value => value === "—") ? "—" : values.join(" / ");
 }
 
 function createMatchStatCard(label, value, note, state = null) {
@@ -345,6 +411,7 @@ function createMatchHistoryItem(entry) {
     stats.className = "match-history-stat-grid";
     stats.append(
         createMatchStatCard("K/D ratio", formatMatchValue(entry.kdRatio), kdNote, entry.kd?.state ?? null),
+        createMatchStatCard("K/D/A", `${formatMatchValue(match.player_kills)} / ${formatMatchValue(match.player_deaths)} / ${formatMatchValue(match.player_assists)}`, "Kills / Deaths / Assists"),
         createMatchStatCard("Game duration", window.DeadlockMatchTrends.formatMatchDuration(match.match_duration_s), "Total playtime")
     );
 
