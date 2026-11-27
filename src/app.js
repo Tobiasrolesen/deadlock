@@ -12,7 +12,9 @@ mongoose.connect("mongodb://127.0.0.1:27017/deadlock");
 
 const app = express();
 app.use(express.json());
-app.use(express.static(path.join(path.dirname(fileURLToPath(import.meta.url)), "public")));
+app.use(express.static(path.join(path.dirname(fileURLToPath(import.meta.url)), "public"),
+    { extensions: ["html"] }
+));
 
 app.use("/api/user", userRoutes);
 app.use("/api/deadlock/patchnotes", patchnotesRoutes);
