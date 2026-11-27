@@ -49,8 +49,3 @@ test('GET /api/heroes/:1 returnerer navnet Infernus', async () => {
     expect(response.status).toBe(200);
     expect(response.body.name).toBe('Infernus');
 });
-
-
-
-
-
